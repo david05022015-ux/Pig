@@ -619,6 +619,37 @@ if(d.pass&&accPass&&d.pass===accPass)return true;
 return false;
 }
 
+async function logoutAccount(){
+var oldNick=nick;
+if(online&&oldNick){
+try{
+var key=oldNick.toLowerCase();
+var d=await fget('scores/'+key);
+if(d&&typeof d==='object'){
+if(d.owners&&d.owners[uid]){
+delete d.owners[uid];
+await fput('scores/'+key+'/owners',d.owners);
+}
+if(d.owner===uid&&d.pass){
+await fput('scores/'+key+'/owner','');
+}
+}
+}catch(e){}
+}
+nick=null;
+accPass='';
+bests={1:0,2:0,3:0};
+gold=false;
+skin='classic';
+try{
+localStorage.removeItem('gp_nick');
+localStorage.removeItem('gp_accpass');
+localStorage.setItem('gp_skin','classic');
+}catch(e){}
+loadLb();
+nickScreen();
+}
+
 function loginPassScreen(n,d){
 state='loginpass';
 ov('<div class="box"><h2>Вход в аккаунт '+n+'</h2><p>Ник уже зарегистрирован. Введи пароль от этого ника, чтобы играть на этом устройстве:</p><input type="password" id="lpi" maxlength="20" placeholder="Пароль"><div class="msg" id="lpm"></div><button id="lpok">Войти</button><button class="sec" id="lpno">Другой ник</button></div>');
@@ -680,11 +711,12 @@ nick=n;try{localStorage.setItem('gp_nick',n)}catch(e){}await loadGr();ready()}}
 function ready(){state='ready';score=0;hud();bg();drawPig();
 var h='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность:</p>';
 [1,2,3].forEach(function(k){h+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
-h+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="chg">Ник</button></div>';
+h+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
 if(online)h+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
 h+='</div>';ov(h);$('hn').textContent=nick;
 document.querySelectorAll('.dbtn').forEach(function(b){b.onclick=function(){diff=+b.dataset.d;lbTab=diff;try{localStorage.setItem('gp_diff',diff)}catch(e){}loadLb();ready()}});
-$('go').onclick=start;$('shp').onclick=shop;$('pwd').onclick=passSettingsScreen;$('chg').onclick=function(){nick=null;nickScreen()};
+$('go').onclick=start;$('shp').onclick=shop;$('pwd').onclick=passSettingsScreen;
+$('out').onclick=function(){if(confirm('Выйти из аккаунта '+nick+'?'))logoutAccount()};
 if(isAdmin)$('adm').onclick=adminPanel;
 if(online)$('mid').onclick=function(){$('idl').textContent=uid}}
 function shop(){state='shop';var m=Math.max(bests[1],bests[2],bests[3]);
