@@ -15,6 +15,7 @@ h2{font-size:17px;margin:0 0 8px;font-weight:600}
 .stage{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--bd);touch-action:manipulation;user-select:none;-webkit-user-select:none}
 canvas{display:block;width:100%;height:auto}
 .hud{position:absolute;top:8px;left:12px;right:12px;display:flex;justify-content:space-between;font-weight:600;font-size:15px;color:#3b2a1a;text-shadow:0 1px 0 rgba(255,255,255,.6);pointer-events:none}
+.mbtn{position:absolute;left:10px;bottom:10px;z-index:5;width:32px;height:32px;margin:0;padding:0;border-radius:999px;background:rgba(15,23,42,.82);color:#fff;border:1px solid rgba(255,255,255,.22);display:inline-flex;align-items:center;justify-content:center;font-size:15px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .fbtn{position:absolute;right:10px;bottom:10px;z-index:5;width:auto;margin:0;padding:6px 10px;border-radius:999px;background:rgba(15,23,42,.82);color:#fff;border:1px solid rgba(255,255,255,.22);display:none;align-items:center;gap:7px;font-size:12px;font-weight:700;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .fbtn .tg{width:28px;height:16px;border-radius:999px;background:#475569;position:relative;transition:background .18s}
 .fbtn .tg::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .18s}
@@ -24,7 +25,7 @@ canvas{display:block;width:100%;height:auto}
 .ov{position:fixed;inset:0;z-index:20;display:none;background:rgba(30,20,10,.6);padding:16px;overflow:auto}
 .box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;width:100%;max-width:360px;text-align:center;margin:auto}
 .box p{margin:6px 0;color:var(--mu);font-size:14px}
-input[type=text]{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);margin:8px 0;text-align:center}
+input[type=text],input[type=password]{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);margin:8px 0;text-align:center}
 button{font:inherit;font-weight:600;background:var(--ac);color:#fff;border:0;border-radius:10px;padding:11px 18px;width:100%;cursor:pointer;margin-top:6px}
 button:disabled{opacity:.45;cursor:default}
 .sec{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
@@ -61,6 +62,7 @@ li.me{color:var(--ac);font-weight:600}
 <div class="stage" id="st">
 <canvas id="c" width="640" height="300"></canvas>
 <div class="hud"><span id="sc">0</span><span id="bs"></span></div>
+<button type="button" class="mbtn" id="mb" title="Музыка и звуки">🔊</button>
 <button type="button" class="fbtn" id="fb"><span>Полёт</span><span class="tg"></span></button>
 </div>
 <p class="note">Прыжок: пробел, стрелка вверх или касание экрана.</p>
@@ -74,12 +76,41 @@ var CFG={
   apiKey: 'AIzaSyAfuZSkyXBa1o1l3EX1yvMKgoYgi-g7NAE',
   databaseURL: 'https://pigg-73232-default-rtdb.firebaseio.com'
 };
+var FLY_PASS='6767';
 var online=false,tok=null,exp=0,isAdmin=false;
 var $=function(i){return document.getElementById(i)};
 var cv=$('c'),ctx=cv.getContext('2d'),W=640,H=300,GY=250;
-var uid=null,nick=null,state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},gold=false,skin='classic',banner=0,GRALL={},news='';
-try{nick=localStorage.getItem('gp_nick');diff=+localStorage.getItem('gp_diff')||2;skin=localStorage.getItem('gp_skin')||'classic'}catch(e){}
+var uid=null,nick=null,state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},gold=false,skin='classic',banner=0,GRALL={},news='',flyAuth=false,muted=false;
+try{nick=localStorage.getItem('gp_nick');diff=+localStorage.getItem('gp_diff')||2;skin=localStorage.getItem('gp_skin')||'classic';flyAuth=localStorage.getItem('gp_fly')==='1';muted=localStorage.getItem('gp_mute')==='1'}catch(e){}
 lbTab=diff;
+
+/* Звук и музыка (Web Audio API) */
+var AC=null,mStep=0,mTimer=0;
+var MELODY=[523.25,659.25,783.99,659.25,587.33,698.46,880,698.46,523.25,659.25,783.99,1046.5,880,783.99,659.25,587.33];
+var BASS=[130.81,130.81,164.81,164.81,146.83,146.83,174.61,174.61,130.81,130.81,164.81,164.81,196,196,146.83,196];
+var SPACE_MEL=[659.25,987.77,1174.66,1318.51,987.77,1174.66,1567.98,1318.51,587.33,880,1046.5,1174.66,880,1046.5,1396.91,1174.66];
+function initAudio(){
+if(!AC){var Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx)AC=new Ctx()}
+if(AC&&AC.state==='suspended')AC.resume();
+}
+function tone(freq,dur,type,vol,slide){
+if(muted)return;initAudio();if(!AC)return;
+var t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
+o.type=type||'triangle';o.frequency.setValueAtTime(freq,t);
+if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
+g.gain.setValueAtTime(vol||.06,t);
+g.gain.exponentialRampToValueAtTime(.0008,t+dur);
+o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur);
+}
+function sfxJump(){tone(270,.16,'sine',.12,620)}
+function sfxHit(){tone(200,.26,'sawtooth',.12,65)}
+function sfxUfo(on){tone(on?280:620,.24,'sine',.09,on?760:220)}
+function sfxWin(){[523.25,659.25,783.99,1046.5].forEach(function(f,i){setTimeout(function(){tone(f,.18,'triangle',.1)},i*80)})}
+function syncMuteBtn(){$('mb').textContent=muted?'🔇':'🔊'}
+$('mb').addEventListener('pointerdown',function(e){e.stopPropagation()});
+$('mb').onclick=function(e){e.stopPropagation();muted=!muted;try{localStorage.setItem('gp_mute',muted?'1':'0')}catch(ex){}syncMuteBtn();if(!muted)initAudio()};
+syncMuteBtn();
+
 var LV={1:{n:'Лёгкий',s0:4.5,sm:7,rp:3000,g0:560,g1:860,dbl:0,hm:50},2:{n:'Средний',s0:5.5,sm:11,rp:2200,g0:480,g1:740,dbl:.12,hm:58},3:{n:'Гипер',s0:8,sm:15,rp:1500,g0:560,g1:780,dbl:.45,hm:66}};
 var SK={
 classic:{n:'Классическая',d:'Бесплатно',a0:'#e3a860',a1:'#b86f33',a2:'#8c5224',bel:'rgba(246,228,196,.85)',pat:'#f4ecdd',ear:'#7d4b27',ei:'#dc9d90',fd:'rgba(70,35,12,.2)',fl:'rgba(255,238,205,.26)',lg:'#8f5a2c',ft:'#dba892'},
@@ -157,14 +188,29 @@ function getSpr(k){if(!SPR[k])SPR[k]=mk(k);return SPR[k]}
 function myGR(){return(nick&&GRALL[nick.toLowerCase()])||{}}
 function owned(k){if(k==='classic')return true;var g=myGR();if(g.skins&&g.skins[k])return true;if(SK[k].adminOnly)return isAdmin;if(k==='gold')return gold;return Math.max(bests[1],bests[2],bests[3])>=SK[k].need}
 function curSkin(){return owned(skin)?skin:'classic'}
-var px=100,py=GY,vy=0,air=false,flying=false,ph=0,obs=[],spd=5,dist=0,score=0,cd=0,t0=0,clouds=[],tufts=[],L=LV[2];
+var px=100,py=GY,vy=0,air=false,flying=false,paused=false,ph=0,obs=[],spd=5,dist=0,score=0,cd=0,t0=0,clouds=[],tufts=[],L=LV[2];
 for(var i=0;i<5;i++)clouds.push({x:rnd(0,W),y:rnd(20,100),s:rnd(.6,1.2)});
 for(var i=0;i<40;i++)tufts.push({x:rnd(0,W),y:rnd(GY+4,H-6)});
 function syncFlyBtn(){var fb=$('fb');if(curSkin()==='alien'){fb.style.display='inline-flex';fb.classList.toggle('on',flying)}else{flying=false;fb.style.display='none';fb.classList.remove('on')}}
+function askFlyPass(){
+var wasPlay=(state==='play');
+if(wasPlay)paused=true;
+ov('<div class="box"><h2>Режим полёта</h2><p>Введи пароль для запуска тарелки:</p><input type="password" id="fpi" inputmode="numeric" maxlength="12" placeholder="••••"><div class="msg" id="fpm"></div><button id="fpok">Включить</button><button class="sec" id="fpno">Отмена</button></div>');
+var inp=$('fpi');setTimeout(function(){inp.focus()},50);
+function closePass(okFly){
+$('ov').style.display='none';
+if(okFly){flyAuth=true;try{localStorage.setItem('gp_fly','1')}catch(e){}flying=true;air=true;syncFlyBtn();sfxUfo(true)}
+if(wasPlay){paused=false;t0=performance.now();requestAnimationFrame(loop)}
+else{bg();drawPig();if(state==='ready')ready();else if(state==='shop')shop()}
+}
+$('fpok').onclick=function(){if(inp.value.trim()===FLY_PASS)closePass(true);else{$('fpm').textContent='Неверный пароль';inp.value='';inp.focus()}};
+inp.onkeydown=function(e){if(e.key==='Enter')$('fpok').click()};
+$('fpno').onclick=function(){closePass(false)};
+}
 $('fb').addEventListener('pointerdown',function(e){e.stopPropagation()});
-$('fb').onclick=function(e){e.stopPropagation();if(curSkin()!=='alien')return;flying=!flying;syncFlyBtn();if(flying)air=true;if(state!=='play'){bg();drawPig()}};
-function jump(){if(state==='play'&&!air&&!flying){vy=-13.2;air=true}}
-function start(){L=LV[diff];obs=[];spd=L.s0;dist=0;score=0;py=flying?135:GY;vy=0;air=flying;cd=90;banner=0;state='play';syncFlyBtn();$('ov').style.display='none';t0=performance.now();requestAnimationFrame(loop)}
+$('fb').onclick=function(e){e.stopPropagation();if(curSkin()!=='alien')return;if(flying){flying=false;syncFlyBtn();sfxUfo(false);if(state!=='play'){bg();drawPig()}return}if(!flyAuth){askFlyPass();return}flying=true;syncFlyBtn();air=true;sfxUfo(true);if(state!=='play'){bg();drawPig()}};
+function jump(){if(state==='play'&&!paused&&!air&&!flying){vy=-13.2;air=true;sfxJump()}}
+function start(){initAudio();L=LV[diff];obs=[];spd=L.s0;dist=0;score=0;py=flying?135:GY;vy=0;air=flying;paused=false;cd=90;banner=0;mStep=0;mTimer=0;state='play';syncFlyBtn();$('ov').style.display='none';t0=performance.now();requestAnimationFrame(loop)}
 function mkObs(x){var k=Math.floor(rnd(0,3)),w=rnd(30,44),h=k===1?rnd(30,40):rnd(34,L.hm);return{x:x,w:w,h:h,k:k}}
 function spawn(){var o=mkObs(W+20),ex=0;obs.push(o);
 if(Math.random()<L.dbl){var o2=mkObs(o.x+o.w+rnd(60,100));obs.push(o2);ex=o2.x-o.x+o2.w}return ex}
@@ -201,9 +247,18 @@ ctx.fillStyle='#9bc58a';ctx.beginPath();ctx.moveTo(0,GY);ctx.quadraticCurveTo(16
 var gg=ctx.createLinearGradient(0,GY,0,H);gg.addColorStop(0,'#6fa84f');gg.addColorStop(1,'#4d8038');ctx.fillStyle=gg;ctx.fillRect(0,GY,W,H-GY);
 ctx.strokeStyle='rgba(30,70,20,.45)';ctx.lineWidth=1.3;tufts.forEach(function(t){ctx.beginPath();ctx.moveTo(t.x,t.y);ctx.lineTo(t.x-2,t.y-7);ctx.moveTo(t.x,t.y);ctx.lineTo(t.x+3,t.y-6);ctx.stroke()})}
 function hud(){$('sc').textContent=score;$('bs').textContent=LV[diff].n+' · рекорд: '+bests[diff]}
-function loop(now){if(state!=='play')return;
+function loop(now){if(state!=='play'||paused)return;
 var dt=Math.min(2,(now-t0)/16.67);t0=now;
 spd=L.s0+Math.min(L.sm-L.s0,dist/L.rp);dist+=spd*dt;score=Math.floor(dist/10);ph+=.28*dt*(spd/5);
+mTimer-=dt;
+if(mTimer<=0){
+var isSpace=(curSkin()==='alien'&&flying);
+var mArr=isSpace?SPACE_MEL:MELODY;
+tone(mArr[mStep%mArr.length],.15,isSpace?'sine':'triangle',.038);
+if(mStep%2===0)tone(BASS[mStep%BASS.length],.22,'triangle',.045);
+mStep++;
+mTimer=Math.max(6.5,12.5-spd*.35);
+}
 if(curSkin()==='alien'&&flying){
 var targetY=135+Math.sin(now/240)*8;
 py+=(targetY-py)*Math.min(1,.14*dt);
@@ -214,14 +269,14 @@ vy+=.72*dt;py+=vy*dt;if(py>=GY){py=GY;vy=0;air=false}
 cd-=dt;if(cd<=0){var ex=spawn();cd=(rnd(L.g0,L.g1)+ex)/spd}
 clouds.forEach(function(c){c.x-=.3*dt;if(c.x<-80)c.x=W+60});
 tufts.forEach(function(t){t.x-=spd*dt;if(t.x<-5){t.x=W+5;t.y=rnd(GY+4,H-6)}});
-if(diff===3&&score>=1500&&!gold){gold=true;skin='gold';try{localStorage.setItem('gp_skin',skin)}catch(e){}syncFlyBtn();banner=260;if(bests[3]<score)bests[3]=score;save()}
+if(diff===3&&score>=1500&&!gold){gold=true;skin='gold';try{localStorage.setItem('gp_skin',skin)}catch(e){}syncFlyBtn();sfxWin();banner=260;if(bests[3]<score)bests[3]=score;save()}
 for(var i=obs.length-1;i>=0;i--){var o=obs[i];o.x-=spd*dt;if(o.x<-60){obs.splice(i,1);continue}
 if(px+38>o.x+7&&px-38<o.x+o.w-7&&py>GY-o.h+8)return over()}
 bg();obs.forEach(drawObs);drawPig();
 if(banner>0){banner-=dt;ctx.fillStyle='#b8860b';ctx.font='bold 22px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('Золотая свинка открыта!',W/2,80);ctx.textAlign='left'}
 hud();requestAnimationFrame(loop)}
 function ownedMap(){var m={};Object.keys(SK).forEach(function(k){m[k]=owned(k)});return m}
-function over(){state='over';var before=ownedMap();bg();obs.forEach(drawObs);drawPig();
+function over(){sfxHit();state='over';var before=ownedMap();bg();obs.forEach(drawObs);drawPig();
 var nb=score>bests[diff];if(nb){bests[diff]=score;save()}hud();
 var nw=Object.keys(SK).filter(function(k){return owned(k)&&!before[k]}).map(function(k){return SK[k].n});
 ov('<div class="box"><h2>Игра окончена</h2><p>'+LV[diff].n+': '+score+' очков'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+nw.join(', ')+'. Загляни в магазин!</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">Ещё раз</button><div class="lr"><button class="sec" id="lv">Сложность</button><button class="sec" id="shp">Магазин</button></div></div>');
@@ -232,7 +287,7 @@ function setRec(d){bests={1:d.b1||0,2:d.b2||d.best||0,3:d.b3||0};gold=d.gold===t
 function nickScreen(){state='nick';score=0;syncFlyBtn();hud();bg();drawPig();
 ov('<div class="box"><h2>Введи свой ник</h2><p>3–12 символов: латиница, цифры, _</p><input type="text" id="ni" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Например, Piggy_77"><div class="msg" id="em"></div><button id="nb">Играть</button></div>');
 var i=$('ni');if(nick)i.value=nick;
-$('nb').onclick=async function(){var n=i.value.trim(),m=$('em');m.textContent='';
+$('nb').onclick=async function(){initAudio();var n=i.value.trim(),m=$('em');m.textContent='';
 if(!ok(n)){m.textContent='Нужно 3–12 символов: латиница, цифры или _';return}
 if(online){try{var d=await fget('scores/'+n.toLowerCase());if(d){if(d.owner!==uid){m.textContent='Ник «'+n+'» уже занят другим игроком';return}setRec(d)}
 else{await fput('scores/'+n.toLowerCase(),{nick:n,owner:uid,b1:0,b2:0,b3:0,gold:false});setRec({})}}
