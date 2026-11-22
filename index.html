@@ -42,6 +42,10 @@ canvas{display:block;width:100%;height:auto}
 .fsbtn.on{border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,.45)}
 .helibtn{position:absolute;right:12px;bottom:52px;z-index:5;display:none;width:auto;margin:0;padding:7px 12px;border-radius:999px;background:linear-gradient(90deg,#ea580c,#eab308);color:#fff;border:1px solid #fef08a;font-size:12px;font-weight:800;box-shadow:0 4px 14px rgba(234,88,12,.5)}
 .helibtn.show{display:inline-flex;align-items:center;gap:4px}
+.doom-full{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;flex-direction:column;background:#050507;transition:background .15s;user-select:none;-webkit-user-select:none}
+.doom-full.show{display:flex}
+.doom-full.flash-red{background:#991b1b}
+.doom-full span{font-size:clamp(34px,9vw,64px);font-weight:900;letter-spacing:2px;color:#ef4444;text-shadow:0 0 26px rgba(239,68,68,.95),0 0 56px rgba(185,28,28,.85)}
 .menu-slot,.over-slot{display:none;margin-top:12px}
 .menu-slot.show,.over-slot.show{display:block}
 .menu-slot .box,.over-slot .box{margin:0 auto;max-width:100%;text-align:center}
@@ -64,7 +68,7 @@ canvas{display:block;width:100%;height:auto}
 .alertbar.show{display:flex}
 .alertbar button{width:auto;margin:0;padding:5px 10px;font-size:12px}
 .ov{position:fixed;inset:0;z-index:20;display:none;background:rgba(30,20,10,.6);padding:16px;overflow:auto}
-.box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;width:100%;max-width:380px;text-align:center;margin:20px auto}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;width:100%;max-width:390px;text-align:center;margin:20px auto}
 .box p{margin:6px 0;color:var(--mu);font-size:14px}
 input[type=text],input[type=password],input[type=number]{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);margin:8px 0;text-align:center}
 button{font:inherit;font-weight:600;background:var(--ac);color:#fff;border:0;border-radius:10px;padding:11px 18px;width:100%;cursor:pointer;margin-top:6px}
@@ -72,6 +76,8 @@ button:disabled{opacity:.45;cursor:default}
 .sec{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
 .red{background:var(--er)}
 .lr{display:flex;gap:6px;flex-wrap:wrap}.lr button{flex:1;min-width:72px;padding:9px 6px}
+.adm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:6px}
+.adm-grid button{margin:0;padding:8px 8px;font-size:12px}
 .msg{min-height:18px;font-size:13px;color:var(--er)}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-top:12px;transition:background .25s,border-color .25s}
 ol{margin:0;padding:0;list-style:none}
@@ -103,6 +109,7 @@ li.me{color:var(--ac);font-weight:600}
 </style>
 </head>
 <body>
+<div class="doom-full" id="doomfull"><span>МОЛОДЕЦ..</span></div>
 <div class="w">
 <h1>Морская свинка: беги и прыгай</h1>
 <div class="alertbar" id="abar"><span id="atxt">Покорми свинку</span><button type="button" id="afix">Еда и уход</button></div>
@@ -598,6 +605,17 @@ for(var i=0;i<5;i++)clouds.push({x:rnd(0,W),y:rnd(25,130),s:rnd(.6,1.2)});
 for(var i=0;i<7;i++)pigeons.push({x:rnd(0,W),y:rnd(32,148),s:rnd(.62,1.05),sp:rnd(.65,1.35),ph:rnd(0,6.28),col:Math.random()<.65?'#94a3b8':'#cbd5e1'});
 for(var i=0;i<45;i++)tufts.push({x:rnd(0,W),y:rnd(GY+5,H-6)});
 
+function syncDoomFullUI(){
+  var df=$('doomfull');
+  if(!df)return;
+  if(doomPhase>0){
+    df.classList.add('show');
+    df.classList.toggle('flash-red',doomPhase===1&&doomRed>0.35);
+  }else{
+    df.classList.remove('show','flash-red');
+  }
+}
+
 function syncHeliBtn(){
   if(!$('hb'))return;
   var freeStart=!!isAdmin;
@@ -704,14 +722,15 @@ function start(){
   spd=L.s0;dist=0;bonus=0;score=0;py=GY;vy=0;air=false;paused=false;
   cd=90;tcd=150;hiJump=0;shield=0;joyTimer=0;scared=false;banner=0;mogFlash=0;
   heliActive=false;heliRentTimer=0;heliFarmAcc=0;heliRotor=0;doomPhase=0;doomTimer=0;doomRed=0;doomBlack=0;
+  syncDoomFullUI();
   mStep=0;mTimer=0;state='play';syncModesUI();syncHeliBtn();
   t0=performance.now();requestAnimationFrame(loop);
 }
 function mkObs(x){var k=Math.floor(rnd(0,3)),w=rnd(30,44),h=k===1?rnd(30,40):rnd(34,L.hm);return{x:x,w:w,h:h,k:k,sink:0,sunk:false}}
 function spawn(){var o=mkObs(W+20),ex=0;obs.push(o);
   if(Math.random()<L.dbl){var o2=mkObs(o.x+o.w+rnd(60,100));obs.push(o2);ex=o2.x-o.x+o2.w}return ex;}
-function spawnTreat(){
-  var r=Math.random(),tp=r<.52?0:(r<.84?1:2);
+function spawnTreat(forcedTp){
+  var r=Math.random(),tp=(typeof forcedTp==='number')?forcedTp:(r<.52?0:(r<.84?1:2));
   var y=GY-rnd(46,146);
   treats.push({x:W+30,y:y,tp:tp,ph:rnd(0,6)});
 }
@@ -1237,26 +1256,6 @@ function drawEffects(){
     }
     ctx.textAlign='left';
   }
-  if(doomPhase>0){
-    if(doomRed>0){
-      ctx.fillStyle='rgba(220,20,20,'+doomRed.toFixed(3)+')';
-      ctx.fillRect(0,0,W,H);
-    }
-    if(doomBlack>0){
-      ctx.fillStyle='rgba(0,0,0,'+doomBlack.toFixed(3)+')';
-      ctx.fillRect(0,0,W,H);
-    }
-    if(doomPhase===2){
-      ctx.save();
-      ctx.fillStyle='#ef4444';
-      ctx.shadowColor='#dc2626';
-      ctx.shadowBlur=18;
-      ctx.font='900 34px system-ui,sans-serif';
-      ctx.textAlign='center';
-      ctx.fillText('МОЛОДЕЦ..',W/2,H/2+10);
-      ctx.restore();
-    }
-  }
 }
 
 function triggerHeliDoom(){
@@ -1265,11 +1264,11 @@ function triggerHeliDoom(){
   doomTimer=0;
   doomRed=0.82;
   doomBlack=0;
+  syncDoomFullUI();
   sfxHeliBoom();
   addBurst(px,py-52,'#ef4444',28);
   addBurst(px,py-52,'#f97316',24);
   addBurst(px,py-52,'#facc15',20);
-  pops.push({x:px,y:py-80,tx:'БУМ! НЕУПЛАТА!',c:'#ef4444',l:55});
   syncHeliBtn();
 }
 
@@ -1285,19 +1284,19 @@ function loop(now){
 
   if(doomPhase>0){
     doomTimer+=dt;
-    for(var pi=parts.length-1;pi>=0;pi--){var pt=parts[pi];pt.x+=pt.vx*dt;pt.y+=pt.vy*dt;pt.vy+=.12*dt;pt.l-=dt;if(pt.l<=0)parts.splice(pi,1)}
-    for(var qi=pops.length-1;qi>=0;qi--){var po=pops[qi];po.y-=1.1*dt;po.l-=dt;if(po.l<=0)pops.splice(qi,1)}
-    if(doomTimer<28){
-      doomRed=Math.max(0.25,0.82-(doomTimer/28)*0.55);
-      doomBlack=Math.min(0.65,(doomTimer/28)*0.65);
+    if(doomTimer<22){
+      doomPhase=1;
+      doomRed=Math.max(0.4,0.85-(doomTimer/22)*0.45);
+      doomBlack=0;
     }else{
       doomPhase=2;
       doomRed=0;
-      doomBlack=Math.min(1,0.65+((doomTimer-28)/24)*0.35);
+      doomBlack=1;
     }
-    bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
-    if(doomTimer>=125){
+    syncDoomFullUI();
+    if(doomTimer>=120){
       doomPhase=0;
+      syncDoomFullUI();
       return over(true);
     }
     requestAnimationFrame(loop);
@@ -1438,7 +1437,7 @@ function loop(now){
 
 function ownedMap(){var m={};Object.keys(SK).forEach(function(k){m[k]=owned(k)});return m}
 function over(fromHeliBoom){
-  heliActive=false;syncHeliBtn();
+  heliActive=false;doomPhase=0;syncDoomFullUI();syncHeliBtn();
   if(!fromHeliBoom)sfxHit();
   state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
   var nb=score>bests[diff];if(nb){bests[diff]=score;save()}hud();
@@ -1664,15 +1663,70 @@ function shop(){
 async function adminPanel(){
   hideMenuSlot();hideOverSlot();
   state='admin';
-  var html='<div class="box"><h2>Админ-панель</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><input type="number" id="apt" placeholder="Очки (например 5000)"><div class="chk">';
+  var html='<div class="box"><h2>Админ-панель (20+ команд)</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><input type="number" id="apt" placeholder="Число очков (например 5000)"><div class="chk">';
   ['grey','tux','gold','royal','malysh','alien'].forEach(function(k){html+='<label><input type="checkbox" data-s="'+k+'">'+SK[k].n+'</label>'});
-  html+='<label><input type="checkbox" id="avip">VIP-значок в таблице</label></div><div class="msg" id="am"></div><button class="sec" id="al">Загрузить</button><button id="as">Выдать / сохранить</button><button class="sec" id="agp">Начислить очки игроку</button><button class="sec" id="arp">Сбросить пароль игрока</button><button class="red" id="ad">Удалить ник из таблицы</button><button class="red" id="ara">Сбросить всем очки</button><button class="sec" id="bk">Назад</button></div>';
+  html+='<label><input type="checkbox" id="avip">VIP-значок в таблице</label></div><div class="msg" id="am"></div>';
+  html+='<button class="sec" id="al">1. Загрузить права игрока</button>';
+  html+='<button id="as">2. Выдать / сохранить скины и VIP</button>';
+  html+='<div class="adm-grid">';
+  html+='<button class="sec" id="agp">3. +Очки игроку</button>';
+  html+='<button class="sec" id="asp">4. Задать точный счёт</button>';
+  html+='<button class="sec" id="azp">5. Обнулить рекорд игрока</button>';
+  html+='<button class="sec" id="arp">6. Сбросить пароль</button>';
+  html+='<button class="sec" id="aallsk">7. Выдать все скины</button>';
+  html+='<button class="sec" id="aclsk">8. Снять все скины</button>';
+  html+='<button class="sec" id="afullc">9. Сытость и чистота 100%</button>';
+  html+='<button class="sec" id="ahung0">10. Сделать голод 0%</button>';
+  html+='<button class="sec" id="adir0">11. Сделать грязь 99%</button>';
+  html+='<button class="sec" id="aspawn0">12. Спавн 🥒 +50</button>';
+  html+='<button class="sec" id="aspawn1">13. Спавн 🥕 Прыжок</button>';
+  html+='<button class="sec" id="aspawn2">14. Спавн 🌿 Щит</button>';
+  html+='<button class="sec" id="aheli1">15. Взлететь на 🚁</button>';
+  html+='<button class="sec" id="aheli0">16. Посадить 🚁</button>';
+  html+='<button class="sec" id="amogall">17. Могнуть всех врагов</button>';
+  html+='<button class="sec" id="am67">18. Перекл. режим 67</button>';
+  html+='<button class="sec" id="amgta">19. Перекл. GTA VI</button>';
+  html+='<button class="sec" id="ambee">20. Перекл. Пчёлы</button>';
+  html+='<button class="sec" id="ammog">21. Перекл. Могну</button>';
+  html+='<button class="sec" id="agth">22. Сменить тему GTA</button>';
+  html+='</div>';
+  html+='<button class="red" id="ad">23. Удалить ник из таблицы</button>';
+  html+='<button class="red" id="ara">24. Сбросить всем очки</button>';
+  html+='<button class="sec" id="bk">Назад</button></div>';
   ov(html);
+  function setAm(txt,okCol){
+    if(!$('am'))return;
+    $('am').style.color=okCol?'#16a34a':'';
+    $('am').textContent=txt;
+  }
   function key(){
     var n=$('an')?$('an').value.trim():'';
-    if(!ok(n)){if($('am'))$('am').textContent='Введи ник: 3–12 символов, латиница, цифры, _';return null;}
-    if($('am'))$('am').textContent='';
+    if(!ok(n)){setAm('Введи ник: 3–12 символов, латиница, цифры, _',false);return null;}
+    setAm('',false);
     return n.toLowerCase();
+  }
+  async function mutateScore(k,fn){
+    var rawNick=$('an')?$('an').value.trim():k;
+    var f='b'+diff;
+    if(online){
+      var cur=await fget('scores/'+k)||{nick:rawNick,owner:uid,b1:0,b2:0,b3:0,gold:false};
+      var nv=fn(cur[f]||0);
+      cur[f]=nv;
+      await fput('scores/'+k,cur);
+      if(nick&&nick.toLowerCase()===k){setRec(cur);hud()}
+      loadLb();
+      return nv;
+    }else{
+      var b=getLoc();
+      var u=b[rawNick]||{b1:0,b2:0,b3:0,gold:false};
+      var nv2=fn(u[f]||0);
+      u[f]=nv2;
+      b[rawNick]=u;
+      try{localStorage.setItem('gp_board',JSON.stringify(b))}catch(e){}
+      if(nick&&nick.toLowerCase()===k){bests[diff]=nv2;hud()}
+      loadLb();
+      return nv2;
+    }
   }
   if($('al'))$('al').onclick=async function(){
     var k=key();if(!k)return;
@@ -1680,56 +1734,88 @@ async function adminPanel(){
       var d=await fget('grants/'+k)||{};
       document.querySelectorAll('.chk input[data-s]').forEach(function(c){c.checked=!!(d.skins&&d.skins[c.dataset.s])});
       if($('avip'))$('avip').checked=d.vip===true;
-      if($('am'))$('am').textContent='Загружено';
-    }catch(e){if($('am'))$('am').textContent='Ошибка загрузки'}
+      setAm('Загружено',true);
+    }catch(e){setAm('Ошибка загрузки',false)}
   };
   if($('as'))$('as').onclick=async function(){
     var k=key();if(!k)return;
     var o={skins:{},vip:$('avip')?!!$('avip').checked:false},any=o.vip;
     document.querySelectorAll('.chk input[data-s]').forEach(function(c){if(c.checked){o.skins[c.dataset.s]=true;any=true}});
-    try{await fput('grants/'+k,any?o:null);await loadGr();if($('am'))$('am').textContent='Сохранено'}catch(e){if($('am'))$('am').textContent='Не удалось сохранить: нет прав админа'}
+    try{await fput('grants/'+k,any?o:null);await loadGr();setAm('Сохранено',true)}catch(e){setAm('Не удалось сохранить: нет прав админа',false)}
   };
   if($('agp'))$('agp').onclick=async function(){
     var k=key();if(!k)return;
     var addVal=$('apt')?parseInt($('apt').value,10):NaN;
-    if(isNaN(addVal)||addVal===0){if($('am'))$('am').textContent='Введи число очков (например 5000)';return;}
-    if($('am'))$('am').textContent='Начисляю очки...';
-    try{
-      var rawNick=$('an')?$('an').value.trim():k;
-      if(online){
-        var cur=await fget('scores/'+k)||{nick:rawNick,owner:uid,b1:0,b2:0,b3:0,gold:false};
-        var f='b'+diff;
-        cur[f]=Math.max(0,(cur[f]||0)+addVal);
-        await fput('scores/'+k,cur);
-        if(nick&&nick.toLowerCase()===k){setRec(cur);hud()}
-        loadLb();
-      }else{
-        var b=getLoc();
-        var u=b[rawNick]||{b1:0,b2:0,b3:0,gold:false};
-        var f='b'+diff;
-        u[f]=Math.max(0,(u[f]||0)+addVal);
-        b[rawNick]=u;
-        try{localStorage.setItem('gp_board',JSON.stringify(b))}catch(e){}
-        if(nick&&nick.toLowerCase()===k){bests[diff]=u[f];hud()}
-        loadLb();
-      }
-      if($('am')){$('am').style.color='#16a34a';$('am').textContent='Игроку '+k+' начислено '+addVal+' очк. ('+LV[diff].n+')!';}
-    }catch(e){if($('am')){$('am').style.color='';$('am').textContent='Ошибка начисления очков';}}
+    if(isNaN(addVal)||addVal===0){setAm('Введи число очков в поле выше',false);return;}
+    try{var nv=await mutateScore(k,function(v){return Math.max(0,v+addVal)});setAm('Игроку '+k+' начислено '+addVal+' (итог: '+nv+')',true)}catch(e){setAm('Ошибка начисления очков',false)}
+  };
+  if($('asp'))$('asp').onclick=async function(){
+    var k=key();if(!k)return;
+    var setVal=$('apt')?parseInt($('apt').value,10):NaN;
+    if(isNaN(setVal)||setVal<0){setAm('Введи неотрицательное число очков',false);return;}
+    try{var nv=await mutateScore(k,function(){return setVal});setAm('Рекорд '+k+' теперь '+nv,true)}catch(e){setAm('Ошибка установки счёта',false)}
+  };
+  if($('azp'))$('azp').onclick=async function(){
+    var k=key();if(!k)return;
+    try{await mutateScore(k,function(){return 0});setAm('Рекорд '+k+' обнулён',true)}catch(e){setAm('Ошибка обнуления',false)}
   };
   if($('arp'))$('arp').onclick=async function(){
     var k=key();if(!k)return;
     if(!confirm('Сбросить пароль игроку '+k+'?'))return;
-    try{await fput('scores/'+k+'/pass','');if($('am'))$('am').textContent='Пароль игрока '+k+' сброшен'}catch(e){if($('am'))$('am').textContent='Не удалось сбросить пароль'}
+    try{await fput('scores/'+k+'/pass','');setAm('Пароль игрока '+k+' сброшен',true)}catch(e){setAm('Не удалось сбросить пароль',false)}
+  };
+  if($('aallsk'))$('aallsk').onclick=function(){
+    document.querySelectorAll('.chk input[data-s]').forEach(function(c){c.checked=true});
+    if($('avip'))$('avip').checked=true;
+    setAm('Отмечены все скины и VIP — нажми «Выдать / сохранить»',true);
+  };
+  if($('aclsk'))$('aclsk').onclick=function(){
+    document.querySelectorAll('.chk input[data-s]').forEach(function(c){c.checked=false});
+    if($('avip'))$('avip').checked=false;
+    setAm('Сняты все галочки скинов и VIP',true);
+  };
+  if($('afullc'))$('afullc').onclick=function(){
+    hunger=100;clean=100;lastCareTick=Date.now();saveCare();
+    if($('abar'))$('abar').classList.remove('show');
+    setAm('Сытость и чистота восстановлены до 100%',true);
+  };
+  if($('ahung0'))$('ahung0').onclick=function(){hunger=0;lastCareTick=Date.now();saveCare();setAm('Сытость 0%',true)};
+  if($('adir0'))$('adir0').onclick=function(){clean=1;lastCareTick=Date.now();saveCare();setAm('Чистота 1% (мухи и запах)',true)};
+  if($('aspawn0'))$('aspawn0').onclick=function(){spawnTreat(0);setAm('Добавлен 🥒 +50',true)};
+  if($('aspawn1'))$('aspawn1').onclick=function(){spawnTreat(1);setAm('Добавлен 🥕 супер-прыжок',true)};
+  if($('aspawn2'))$('aspawn2').onclick=function(){spawnTreat(2);setAm('Добавлен 🌿 щит',true)};
+  if($('aheli1'))$('aheli1').onclick=function(){
+    if(state!=='play')start();
+    heliActive=true;heliRentTimer=120;heliFarmAcc=0;air=true;vy=0;sfxHeliStart();syncHeliBtn();
+    setAm('Вертолёт запущен!',true);
+  };
+  if($('aheli0'))$('aheli0').onclick=function(){heliActive=false;syncHeliBtn();setAm('Вертолёт посажен',true)};
+  if($('amogall'))$('amogall').onclick=function(){
+    obs.forEach(function(o){o.sunk=true});
+    mogFlash=18;sfxMog();
+    setAm('Все препятствия могнуты!',true);
+  };
+  if($('am67'))$('am67').onclick=function(){mode67=!mode67;if(mode67){modeGta=false;modeBee=false;modeMog=false}syncModesUI();setAm('Режим 67: '+(mode67?'ВКЛ':'ВЫКЛ'),true)};
+  if($('amgta'))$('amgta').onclick=function(){modeGta=!modeGta;if(modeGta){mode67=false;modeBee=false;modeMog=false}syncModesUI();setAm('Режим GTA VI: '+(modeGta?'ВКЛ':'ВЫКЛ'),true)};
+  if($('ambee'))$('ambee').onclick=function(){modeBee=!modeBee;if(modeBee){mode67=false;modeGta=false;modeMog=false}syncModesUI();setAm('Режим Пчёлы: '+(modeBee?'ВКЛ':'ВЫКЛ'),true)};
+  if($('ammog'))$('ammog').onclick=function(){modeMog=!modeMog;if(modeMog){mode67=false;modeGta=false;modeBee=false}syncModesUI();setAm('Режим Могну: '+(modeMog?'ВКЛ':'ВЫКЛ'),true)};
+  if($('agth'))$('agth').onclick=function(){
+    var order=['night','sunset','day'];
+    gtaTheme=order[(order.indexOf(gtaTheme)+1)%order.length];
+    try{localStorage.setItem('gp_gta_theme',gtaTheme)}catch(e){}
+    if(!modeGta){modeGta=true;mode67=false;modeBee=false;modeMog=false;syncModesUI()}
+    else syncGtaThemeUI();
+    setAm('Тема GTA VI: '+gtaTheme,true);
   };
   if($('ad'))$('ad').onclick=async function(){
     var k=key();if(!k)return;
     if(!confirm('Удалить ник '+k+' из таблицы? Рекорды пропадут.'))return;
-    try{await fdel('scores/'+k);loadLb();if($('am'))$('am').textContent='Ник удалён'}catch(e){if($('am'))$('am').textContent='Не удалось удалить'}
+    try{await fdel('scores/'+k);loadLb();setAm('Ник удалён',true)}catch(e){setAm('Не удалось удалить',false)}
   };
   if($('ara'))$('ara').onclick=async function(){
     if(!confirm('Точно обнулить рекорды ВСЕМ игрокам в таблице?'))return;
     if(!confirm('Последнее предупреждение: очки всех игроков станут 0! Продолжить?'))return;
-    if($('am'))$('am').textContent='Обнуляю очки...';
+    setAm('Обнуляю очки...',false);
     try{
       if(online){
         var all=await fget('scores')||{};
@@ -1746,8 +1832,8 @@ async function adminPanel(){
       Object.keys(loc).forEach(function(k){if(typeof loc[k]==='object'){loc[k].b1=0;loc[k].b2=0;loc[k].b3=0}else loc[k]=0});
       try{localStorage.setItem('gp_board',JSON.stringify(loc))}catch(e){}
       bests={1:0,2:0,3:0};hud();loadLb();
-      if($('am'))$('am').textContent='Очки всем игрокам сброшены!';
-    }catch(e){if($('am'))$('am').textContent='Ошибка при сбросе очков'}
+      setAm('Очки всем игрокам сброшены!',true);
+    }catch(e){setAm('Ошибка при сбросе очков',false)}
   };
   if($('bk'))$('bk').onclick=function(){ready()};
 }
