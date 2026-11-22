@@ -46,6 +46,12 @@ canvas{display:block;width:100%;height:auto}
 .doom-full.show{display:flex}
 .doom-full.flash-red{background:#991b1b}
 .doom-full span{font-size:clamp(26px,7vw,54px);line-height:1.2;font-weight:900;letter-spacing:1.5px;color:#ef4444;text-shadow:0 0 26px rgba(239,68,68,.95),0 0 56px rgba(185,28,28,.85)}
+.cartoon-full{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;padding:16px;background:#06070c;user-select:none;-webkit-user-select:none}
+.cartoon-full.show{display:flex}
+.cartoon-frame{position:relative;width:100%;max-width:720px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.18);background:#09090b;box-shadow:0 20px 60px rgba(0,0,0,.75)}
+.cartoon-frame canvas{display:block;width:100%;height:auto}
+.cartoon-top{position:absolute;top:10px;left:14px;right:14px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.85);pointer-events:none}
+.cartoon-cap{position:absolute;left:14px;right:14px;bottom:12px;text-align:center;font-size:clamp(14px,3.5vw,19px);font-weight:800;color:#fff;background:rgba(9,9,11,.72);padding:8px 14px;border-radius:12px;pointer-events:none}
 .menu-slot,.over-slot{display:none;margin-top:12px}
 .menu-slot.show,.over-slot.show{display:block}
 .menu-slot .box,.over-slot .box{margin:0 auto;max-width:100%;text-align:center}
@@ -110,6 +116,13 @@ li.me{color:var(--ac);font-weight:600}
 </head>
 <body>
 <div class="doom-full" id="doomfull"><span id="doomtext">МОЛОДЕЦ..</span></div>
+<div class="cartoon-full" id="cartoonfull">
+<div class="cartoon-frame">
+<canvas id="cc" width="640" height="360"></canvas>
+<div class="cartoon-top"><span id="cscene">АКТ I</span><span id="ctime">00:00 / 01:30</span></div>
+<div class="cartoon-cap" id="ccap">Свинки взлетели на вертолёте и решили покорить небо...</div>
+</div>
+</div>
 <div class="w">
 <h1>Морская свинка: беги и прыгай</h1>
 <div class="alertbar" id="abar"><span id="atxt">Покорми свинку</span><button type="button" id="afix">Еда и уход</button></div>
@@ -155,6 +168,7 @@ var SECRET_PASS='6767';
 var online=false,tok=null,exp=0,isAdmin=false;
 var $=function(i){return document.getElementById(i)};
 var cv=$('c'),ctx=cv.getContext('2d'),W=640,H=390,GY=335;
+var ccv=$('cc'),cctx=ccv?ccv.getContext('2d'):null;
 var uid=null,nick=null,accPass='',state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},gold=false,skin='classic',banner=0,GRALL={},passAuth=false,mode67=false,modeGta=false,modeBee=false,modeMog=false,gtaTheme='night',muted=false,fullSc=false;
 var hunger=100,clean=100,lastCareTick=Date.now(),lastFeedAlert=0,careCause='';
 
@@ -339,7 +353,7 @@ if($('fsb')){
 document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement)fullSc=false;syncFsUI()});
 document.addEventListener('webkitfullscreenchange',function(){if(!document.webkitFullscreenElement)fullSc=false;syncFsUI()});
 
-var AC=null,mStep=0,mTimer=0,track67=null,track67Ok=false,trackGta=null,trackGtaOk=false,trackBee=null,trackBeeOk=false,trackMog=null,trackMogOk=false;
+var AC=null,mStep=0,mTimer=0,track67=null,track67Ok=false,trackGta=null,trackGtaOk=false,trackBee=null,trackBeeOk=false,trackMog=null,trackMogOk=false,trackCartoon=null,trackCartoonOk=false;
 try{
   track67=new Audio('67.mp3');track67.loop=true;track67.volume=0.65;
   track67.addEventListener('canplaythrough',function(){track67Ok=true});
@@ -353,6 +367,9 @@ try{
   trackMog=new Audio('mog.mp3');trackMog.loop=true;trackMog.volume=0.65;
   trackMog.addEventListener('canplaythrough',function(){trackMogOk=true});
   trackMog.addEventListener('error',function(){trackMogOk=false});
+  trackCartoon=new Audio('heli_cartoon.mp3');trackCartoon.loop=false;trackCartoon.volume=0.75;
+  trackCartoon.addEventListener('canplaythrough',function(){trackCartoonOk=true});
+  trackCartoon.addEventListener('error',function(){trackCartoonOk=false});
 }catch(e){}
 
 var MELODY=[523.25,659.25,783.99,659.25,587.33,698.46,880,698.46,523.25,659.25,783.99,1046.5,880,783.99,659.25,587.33];
@@ -366,11 +383,27 @@ var BEE_BASS=[98,98,146.83,98,82.41,82.41,123.47,82.41,98,98,146.83,98,110,110,1
 var MOG_MEL=[293.66,349.23,440,349.23,329.63,293.66,261.63,293.66,440,523.25,440,392,349.23,329.63,293.66,220];
 var MOG_BASS=[73.42,73.42,110,73.42,65.41,65.41,98,65.41,110,110,146.83,110,73.42,73.42,110,73.42];
 
+var cartoonActive=false,cartoonStart=0,cartoonRaf=0,cartoonBeat=0;
+var CARTOON_ACTS=[
+  {t:'АКТ I · ВЗЛЁТ',c:'Свинки забрались в вертолёт и взмыли над полями...',s1:'#38bdf8',s2:'#fef9c3'},
+  {t:'АКТ II · В ОБЛАКАХ',c:'Свинки летят высоко в облаках и забыли про счётчик аренды...',s1:'#1d4ed8',s2:'#e0f2fe'},
+  {t:'АКТ III · СБОЙ МОТОРА',c:'Мотор задымил и зачихал — вертолёт потянуло вниз...',s1:'#7f1d1d',s2:'#f97316'},
+  {t:'АКТ IV · КРУШЕНИЕ',c:'Падение... Даже виртуальным свинкам больно разбиваться..',s1:'#09090b',s2:'#450a0a'}
+];
+
 function initAudio(){
   if(!AC){var Ctx=window.AudioContext||window.webkitAudioContext;if(Ctx)AC=new Ctx()}
   if(AC&&AC.state==='suspended')AC.resume();
 }
 function syncTracks(){
+  if(cartoonActive){
+    if(track67)track67.pause();if(trackGta)trackGta.pause();if(trackBee)trackBee.pause();if(trackMog)trackMog.pause();
+    if(trackCartoon&&!muted){
+      trackCartoon.play().then(function(){trackCartoonOk=true}).catch(function(){trackCartoonOk=false});
+    }
+    return;
+  }
+  if(trackCartoon)trackCartoon.pause();
   if(track67){
     if(mode67&&!muted)track67.play().then(function(){track67Ok=true}).catch(function(){track67Ok=false});
     else track67.pause();
@@ -605,6 +638,86 @@ for(var i=0;i<5;i++)clouds.push({x:rnd(0,W),y:rnd(25,130),s:rnd(.6,1.2)});
 for(var i=0;i<7;i++)pigeons.push({x:rnd(0,W),y:rnd(32,148),s:rnd(.62,1.05),sp:rnd(.65,1.35),ph:rnd(0,6.28),col:Math.random()<.65?'#94a3b8':'#cbd5e1'});
 for(var i=0;i<45;i++)tufts.push({x:rnd(0,W),y:rnd(GY+5,H-6)});
 
+function fmtTime(sec){
+  var s=Math.max(0,Math.floor(sec));
+  var m=Math.floor(s/60);
+  var r=s%60;
+  return (m<10?'0'+m:m)+':'+(r<10?'0'+r:r);
+}
+
+function renderCartoon(ms){
+  if(!cctx)return;
+  var sec=ms/1000;
+  var idx=Math.min(3,Math.floor(sec/22.5));
+  var act=CARTOON_ACTS[idx];
+  if($('ctime'))$('ctime').textContent=fmtTime(sec)+' / 01:30';
+  if($('cscene'))$('cscene').textContent=act.t;
+  if($('ccap'))$('ccap').textContent=act.c;
+
+  var g=cctx.createLinearGradient(0,0,0,360);
+  g.addColorStop(0,act.s1);g.addColorStop(1,act.s2);
+  cctx.fillStyle=g;cctx.fillRect(0,0,640,360);
+
+  cctx.fillStyle=idx===3?'#18181b':'#3f6212';
+  cctx.fillRect(0,305,640,55);
+
+  var hx=320+Math.sin(sec*1.2)*45;
+  var hy=idx===0?Math.max(115,250-sec*6):(idx===2?120+(sec-45)*3.4:(idx===3?Math.min(278,200+(sec-67.5)*14):110+Math.sin(sec*2)*14));
+  var tilt=idx===2?0.18*Math.sin(sec*8):(idx===3?0.32:-0.04);
+
+  if(idx>=2){
+    for(var i=0;i<6;i++){
+      var age=(sec*3+i*0.5)%2.5;
+      cctx.fillStyle='rgba(39,39,42,'+Math.max(0,0.65-age*0.25).toFixed(2)+')';
+      cctx.beginPath();cctx.arc(hx-45-age*20,hy-age*8,6+age*4,0,7);cctx.fill();
+    }
+  }
+
+  cctx.save();cctx.translate(hx,hy);cctx.rotate(tilt);
+  heliRotor+=0.45;
+  var bw=Math.max(5,Math.abs(Math.cos(heliRotor))*44);
+  cctx.fillStyle='#334155';cctx.fillRect(-88,-4,52,7);
+  cctx.fillStyle=idx===3?'#7f1d1d':'#f97316';
+  cctx.beginPath();cctx.ellipse(0,2,40,14,0,0,7);cctx.fill();
+  cctx.fillStyle='#fff';cctx.fillRect(-bw,-20,bw*2,3);
+  var spr=getSpr(curSkin(),modeBee);
+  if(spr)cctx.drawImage(spr,-20,-20,38,28);
+  cctx.restore();
+}
+
+function stepCartoon(now){
+  if(!cartoonActive)return;
+  var ms=now-cartoonStart;
+  renderCartoon(ms);
+  cartoonBeat++;
+  if(cartoonBeat%12===0&&!(trackCartoonOk&&trackCartoon&&!trackCartoon.paused)){
+    var notes=ms<45000?[392,440,493.88,587.33]:[329.63,293.66,261.63,220];
+    tone(notes[Math.floor(cartoonBeat/12)%notes.length],.18,'triangle',.04);
+  }
+  if(ms>=90000){
+    stopCartoon();
+    over(true);
+    return;
+  }
+  cartoonRaf=requestAnimationFrame(stepCartoon);
+}
+
+function startHeliCartoon(){
+  if(cartoonActive)return;
+  cartoonActive=true;cartoonStart=performance.now();cartoonBeat=0;
+  if($('cartoonfull'))$('cartoonfull').classList.add('show');
+  syncTracks();
+  renderCartoon(0);
+  cartoonRaf=requestAnimationFrame(stepCartoon);
+}
+
+function stopCartoon(){
+  cartoonActive=false;
+  if(cartoonRaf){cancelAnimationFrame(cartoonRaf);cartoonRaf=0}
+  if($('cartoonfull'))$('cartoonfull').classList.remove('show');
+  syncTracks();
+}
+
 function getDoomPhrase(timer){
   if(timer<150)return 'МОЛОДЕЦ..';
   if(timer<300)return 'ТЫ РАЗБИЛ СВИНКУ';
@@ -627,14 +740,14 @@ function syncDoomFullUI(){
 function syncHeliBtn(){
   if(!$('hb'))return;
   var freeStart=!!isAdmin;
-  var canBuy=(state==='play'&&!paused&&!heliActive&&doomPhase===0&&(freeStart||score>=5000));
+  var canBuy=(state==='play'&&!paused&&!heliActive&&doomPhase===0&&!cartoonActive&&(freeStart||score>=5000));
   $('hb').textContent=freeStart?'🚁 Вертолёт · БЕСПЛАТНО (АДМИН)':'🚁 Вертолёт · 5000';
   $('hb').classList.toggle('show',canBuy);
 }
 
 function buyHelicopter(){
   var freeStart=!!isAdmin;
-  if(state!=='play'||paused||heliActive||doomPhase!==0||(!freeStart&&score<5000))return;
+  if(state!=='play'||paused||heliActive||doomPhase!==0||cartoonActive||(!freeStart&&score<5000))return;
   if(!freeStart){
     bonus-=5000;
     score=Math.max(0,Math.floor(dist/10)+bonus);
@@ -723,13 +836,14 @@ if($('mgb')){
   };
 }
 
-function jump(){if(state==='play'&&!paused&&doomPhase===0&&!heliActive&&!air){var sup=hiJump>0;vy=sup?-16.2:-13.2;air=true;sfxJump(sup)}}
+function jump(){if(state==='play'&&!paused&&doomPhase===0&&!cartoonActive&&!heliActive&&!air){var sup=hiJump>0;vy=sup?-16.2:-13.2;air=true;sfxJump(sup)}}
 function start(){
   hideMenuSlot();hideOverSlot();closeModalOv();
   initAudio();L=LV[diff]||LV[2];obs=[];treats=[];pops=[];parts=[];
   spd=L.s0;dist=0;bonus=0;score=0;py=GY;vy=0;air=false;paused=false;
   cd=90;tcd=150;hiJump=0;shield=0;joyTimer=0;scared=false;banner=0;mogFlash=0;
   heliActive=false;heliRentTimer=0;heliFarmAcc=0;heliRotor=0;doomPhase=0;doomTimer=0;doomRed=0;doomBlack=0;
+  stopCartoon();
   syncDoomFullUI();
   mStep=0;mTimer=0;state='play';syncModesUI();syncHeliBtn();
   t0=performance.now();requestAnimationFrame(loop);
@@ -1302,10 +1416,11 @@ function loop(now){
       doomBlack=1;
     }
     syncDoomFullUI();
-    if(doomTimer>=600){
+    if(doomTimer>=120){
       doomPhase=0;
       syncDoomFullUI();
-      return over(true);
+      startHeliCartoon();
+      return;
     }
     requestAnimationFrame(loop);
     return;
