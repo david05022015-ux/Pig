@@ -121,6 +121,7 @@ li.me{color:var(--ac);font-weight:600}
 .sthead{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:4px}
 .mtr{height:8px;border-radius:999px;background:rgba(128,128,128,.22);overflow:hidden}
 .mfl{height:100%;transition:width .2s}
+.room-code{font-size:32px;font-weight:900;letter-spacing:6px;color:var(--ac);background:var(--bg);border:2px dashed var(--bd);border-radius:12px;padding:10px;margin:8px 0}
 </style>
 </head>
 <body>
@@ -184,6 +185,7 @@ var ccv=$('cc'),cctx=ccv?ccv.getContext('2d'):null;
 var uid=null,nick=null,accPass='',state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},gold=false,skin='classic',banner=0,GRALL={},passAuth=false,mode67=false,modeGta=false,modeBee=false,modeMog=false,gtaTheme='night',muted=false,fullSc=false;
 var hunger=100,clean=100,lastCareTick=Date.now(),lastFeedAlert=0,careCause='';
 var wetness=0,bathCap=false;
+var mpCode=null,mpRole=null,mpSeed=0,mpPollTimer=0,mpSendTimer=0,mpPeer=null,mpStatusTxt='';
 
 try{
   nick=localStorage.getItem('gp_nick');
@@ -291,6 +293,19 @@ function closeModalOv(){
   o.style.display='none';
 }
 function ok(n){return /^[A-Za-z0-9_]{3,12}$/.test(n)}
+
+function stopMpLoops(){
+  if(mpPollTimer){clearInterval(mpPollTimer);mpPollTimer=0}
+  if(mpSendTimer){clearInterval(mpSendTimer);mpSendTimer=0}
+}
+async function leaveMpRoom(){
+  stopMpLoops();
+  var code=mpCode;
+  mpCode=null;mpRole=null;mpPeer=null;mpStatusTxt='';
+  if(online&&code&&uid){
+    try{await fdel('rooms/'+code+'/players/'+uid)}catch(e){}
+  }
+}
 
 function notifyFeedPig(text){
   var msg=text||'Покорми свинку';
@@ -488,8 +503,16 @@ malysh:{n:'Малыш',d:'Только по выдаче админа / адми
 oreo:{n:'Орео',tag:'ЛИМИТКА',d:'Только по выдаче админа · пушистый калифорнийский',adminOnly:true,a0:'#ffffff',a1:'#f7f6f2',a2:'#e5e2dc',bel:'rgba(255,255,255,.98)',pat:'#ffffff',ear:'#18181b',ei:'#3f3f46',fd:'rgba(175,170,164,.22)',fl:'rgba(255,255,255,.85)',lg:'#1f1f23',ft:'#18181b',oreo:true,wetBelly:true},
 alien:{n:'Инопланетянин',tag:'ЛИМИТКА',d:'200 000 очков или выдача админа · парит на тарелке',need:200000,a0:'#9eff6e',a1:'#45c938',a2:'#1f7a24',bel:'rgba(218,255,205,.9)',pat:'#c7ff9e',ear:'#1d6e22',ei:'#72f295',fd:'rgba(10,65,20,.25)',fl:'rgba(210,255,190,.42)',lg:'#2b8a30',ft:'#85f279',ufo:true}
 };
-var SPR={},SPR_BEE={};
-function rnd(a,b){return a+Math.random()*(b-a)}
+var SPR={};
+var rngState=1;
+function seedRnd(s){rngState=(Math.abs(s||1)%2147483646)+1}
+function rnd(a,b){
+  if(mpCode&&mpSeed){
+    rngState=(rngState*16807)%2147483647;
+    return a+(rngState/2147483647)*(b-a);
+  }
+  return a+Math.random()*(b-a);
+}
 function drawUfo(g,cx,cy,sc){
   g.save();g.translate(cx,cy);g.scale(sc,sc);
   var bm=g.createLinearGradient(0,6,0,26);
@@ -958,15 +981,142 @@ if($('mgb')){
 }
 
 function jump(){if(state==='play'&&!paused&&doomPhase===0&&!cartoonActive&&!heliActive&&!air){var sup=hiJump>0;vy=sup?-16.5:-13.5;air=true;sfxJump(sup)}}
-function start(){
+
+async function pushMpState(aliveFlag){
+  if(!online||!mpCode||!uid)return;
+  try{
+    await fput('rooms/'+mpCode+'/players/'+uid,{
+      nick:nick||'Игрок',
+      skin:curSkin(),
+      py:Math.round(py),
+      vy:Math.round(vy*10)/10,
+      score:score,
+      wet:Math.round(wetness*100)/100,
+      cap:!!bathCap,
+      alive:aliveFlag!==false,
+      ts:Date.now()
+    });
+  }catch(e){}
+}
+
+function startMpLoops(){
+  stopMpLoops();
+  if(!online||!mpCode)return;
+  mpSendTimer=setInterval(function(){
+    if(state==='play'&&!paused)pushMpState(true);
+  },90);
+  mpPollTimer=setInterval(async function(){
+    if(!mpCode||!online)return;
+    try{
+      var rm=await fget('rooms/'+mpCode);
+      if(!rm)return;
+      if(rm.seed&&!mpSeed)mpSeed=rm.seed;
+      var pls=rm.players||{};
+      var other=null;
+      Object.keys(pls).forEach(function(k){
+        if(k!==uid)other=pls[k];
+      });
+      mpPeer=other;
+      if(state==='lobby'&&$('mproomst')){
+        if(other&&other.nick){
+          $('mproomst').textContent='Соперник найден: '+other.nick+'! Запускаем дуэль...';
+          if(mpRole==='host'&&rm.status!=='playing'){
+            await fput('rooms/'+mpCode+'/status','playing');
+          }
+          if(rm.status==='playing'||other){
+            stopMpLoops();
+            start(rm.seed||mpSeed||(Date.now()%900000+100000));
+          }
+        }else{
+          $('mproomst').textContent='Ждём второго игрока по коду '+mpCode+'...';
+        }
+      }
+    }catch(e){}
+  },220);
+}
+
+function mpLobbyScreen(){
+  stopMpLoops();
+  state='lobby';
+  if(!online){
+    ov('<div class="box"><h2>Дуэль 1 на 1</h2><p>Для игры по сети нужен интернет и подключение к Firebase.</p><button class="sec" id="mpbk">Назад</button></div>');
+    if($('mpbk'))$('mpbk').onclick=function(){ready()};
+    return;
+  }
+  var html='<div class="box"><h2>Дуэль 1 на 1 по сети</h2><p>Создай комнату с кодом из 4 цифр или зайди к другу</p>';
+  html+='<button id="mpcreate">Создать комнату</button>';
+  html+='<input type="number" id="mpjoinin" inputmode="numeric" maxlength="4" placeholder="Код комнаты (например 4821)">';
+  html+='<div class="msg" id="mpm"></div>';
+  html+='<button class="sec" id="mpjoin">Войти в комнату</button>';
+  html+='<button class="sec" id="mpbk">Назад</button></div>';
+  ov(html);
+
+  if($('mpcreate'))$('mpcreate').onclick=async function(){
+    var code=String(Math.floor(1000+Math.random()*9000));
+    var seed=Math.floor(100000+Math.random()*899999);
+    mpCode=code;mpRole='host';mpSeed=seed;mpPeer=null;
+    try{
+      await fput('rooms/'+code,{
+        host:uid,
+        diff:diff,
+        seed:seed,
+        status:'waiting',
+        created:Date.now(),
+        players:{}
+      });
+      await pushMpState(true);
+      showWaitingRoom();
+    }catch(e){
+      if($('mpm'))$('mpm').textContent='Не удалось создать комнату';
+    }
+  };
+
+  if($('mpjoin'))$('mpjoin').onclick=async function(){
+    var code=$('mpjoinin')?$('mpjoinin').value.trim():'';
+    if(!/^\d{4}$/.test(code)){if($('mpm'))$('mpm').textContent='Введи 4-значный код комнаты';return;}
+    try{
+      var rm=await fget('rooms/'+code);
+      if(!rm){if($('mpm'))$('mpm').textContent='Комната '+code+' не найдена';return;}
+      mpCode=code;mpRole='guest';mpSeed=rm.seed||123456;
+      if(rm.diff&&LV[rm.diff]){diff=rm.diff;lbTab=diff;}
+      await pushMpState(true);
+      await fput('rooms/'+code+'/status','playing');
+      stopMpLoops();
+      start(mpSeed);
+    }catch(e){
+      if($('mpm'))$('mpm').textContent='Ошибка входа в комнату';
+    }
+  };
+
+  if($('mpbk'))$('mpbk').onclick=async function(){await leaveMpRoom();ready()};
+}
+
+function showWaitingRoom(){
+  state='lobby';
+  ov('<div class="box"><h2>Комната создана</h2><p>Продиктуй этот код другу:</p><div class="room-code">'+mpCode+'</div><p id="mproomst">Ждём второго игрока по коду '+mpCode+'...</p><button id="mpstartnow">Начать сразу (1 на 1)</button><button class="sec" id="mpcancel">Отмена</button></div>');
+  startMpLoops();
+  if($('mpstartnow'))$('mpstartnow').onclick=async function(){
+    stopMpLoops();
+    try{await fput('rooms/'+mpCode+'/status','playing')}catch(e){}
+    start(mpSeed);
+  };
+  if($('mpcancel'))$('mpcancel').onclick=async function(){await leaveMpRoom();ready()};
+}
+
+function start(forcedSeed){
   hideMenuSlot();hideOverSlot();closeModalOv();
   initAudio();L=LV[diff]||LV[2];obs=[];treats=[];pops=[];parts=[];
+  if(mpCode){
+    mpSeed=forcedSeed||mpSeed||123456;
+    seedRnd(mpSeed);
+  }
   spd=L.s0;dist=0;bonus=0;score=0;py=GY;vy=0;air=false;paused=false;
   cd=95;tcd=150;hiJump=0;shield=0;joyTimer=0;scared=false;banner=0;mogFlash=0;
   heliActive=false;heliRentTimer=0;heliFarmAcc=0;heliRotor=0;doomPhase=0;doomTimer=0;doomRed=0;doomBlack=0;
   stopCartoon();
   syncDoomFullUI();
   mStep=0;mTimer=0;state='play';syncModesUI();syncHeliBtn();
+  if(mpCode){pushMpState(true);startMpLoops()}
   t0=performance.now();requestAnimationFrame(loop);
 }
 function mkObs(x){var k=Math.floor(rnd(0,3)),w=rnd(34,48),h=k===1?rnd(34,46):rnd(38,L.hm);return{x:x,w:w,h:h,k:k,sink:0,sunk:false}}
@@ -1106,6 +1256,33 @@ function drawHelicopter(cx,cy){
   ctx.fillStyle='#cbd5e1';ctx.fillRect(-3,-24,6,10);
   ctx.fillStyle='rgba(248,250,252,.85)';
   ctx.fillRect(-bladeW,-26,bladeW*2,3.5);
+  ctx.restore();
+}
+
+function drawPeerPig(){
+  if(!mpCode||!mpPeer||mpPeer.alive===false)return;
+  var ox=px+54,oy=mpPeer.py||GY,ovy=mpPeer.vy||0,oair=oy<GY-2;
+  var pk=SK[mpPeer.skin]?mpPeer.skin:'classic';
+  var pSpr=getSpr(pk,modeBee,mpPeer.wet||0,!!mpPeer.cap);
+  ctx.save();
+  ctx.globalAlpha=0.72;
+  ctx.fillStyle='rgba(56,189,248,.22)';
+  ctx.beginPath();ctx.ellipse(ox,GY+3,42,5,0,0,7);ctx.fill();
+  ctx.translate(ox,oy);
+  ctx.rotate(oair?Math.max(-.25,Math.min(.25,ovy/50)):0);
+  ctx.scale(.82,.82);
+  if(pSpr)ctx.drawImage(pSpr,-70,-106);
+  ctx.restore();
+
+  ctx.save();
+  ctx.font='bold 12px system-ui,sans-serif';
+  ctx.textAlign='center';
+  var label=(mpPeer.nick||'Друг')+' · '+(mpPeer.score||0);
+  var tw=ctx.measureText(label).width+12;
+  ctx.fillStyle='rgba(15,23,42,.78)';
+  ctx.fillRect(ox-tw/2,oy-108,tw,18);
+  ctx.fillStyle='#38bdf8';
+  ctx.fillText(label,ox,oy-95);
   ctx.restore();
 }
 
@@ -1474,6 +1651,11 @@ function drawEffects(){
   ctx.globalAlpha=1;ctx.textAlign='left';
   var bx=14,by=38;
   ctx.font='bold 12px system-ui,sans-serif';
+  if(mpCode){
+    ctx.fillStyle='rgba(2,132,199,.92)';ctx.fillRect(bx,by,176,18);
+    ctx.fillStyle='#fff';ctx.fillText('⚔️ Комната #'+mpCode+(mpPeer?' · vs '+mpPeer.nick:''),bx+6,by+13);
+    by+=22;
+  }
   if(heliActive){
     ctx.fillStyle='rgba(220,38,38,.92)';ctx.fillRect(bx,by,176,18);
     ctx.fillStyle='#fff';ctx.fillText('🚁 -2000 через '+(heliRentTimer/60).toFixed(1)+'с',bx+6,by+13);
@@ -1672,7 +1854,7 @@ function loop(now){
     }
   }
   if(!scared&&!heliActive&&modeGta&&Math.min(6,1+Math.floor(score/250))>=5&&Math.floor(now/450)%2===0)scared=true;
-  bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
+  bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPeerPig();drawPig();drawEffects();
   if(banner>0){banner-=dt;ctx.fillStyle='#b8860b';ctx.font='bold 24px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('Золотая свинка открыта!',W/2,115);ctx.textAlign='left'}
   syncHeliBtn();
   hud();requestAnimationFrame(loop);
@@ -1682,12 +1864,20 @@ function ownedMap(){var m={};Object.keys(SK).forEach(function(k){m[k]=owned(k)})
 function over(fromHeliBoom){
   heliActive=false;doomPhase=0;syncDoomFullUI();syncHeliBtn();
   if(!fromHeliBoom)sfxHit();
-  state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
+  state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPeerPig();drawPig();drawEffects();
   var nb=score>bests[diff];if(nb){bests[diff]=score;save()}hud();
+  if(mpCode){pushMpState(false);stopMpLoops()}
+  var duelLine='';
+  if(mpCode&&mpPeer){
+    var pSc=mpPeer.score||0;
+    if(score>pSc)duelLine='<p style="color:#16a34a;font-weight:800">🏆 Победа в дуэли! Ты '+score+' : '+pSc+' '+(mpPeer.nick||'Друг')+'</p>';
+    else if(score<pSc)duelLine='<p style="color:#ef4444;font-weight:800">💥 Поражение в дуэли: ты '+score+' : '+pSc+' '+(mpPeer.nick||'Друг')+'</p>';
+    else duelLine='<p style="font-weight:800">🤝 Ничья в дуэли: '+score+' : '+pSc+'</p>';
+  }
   var nw=Object.keys(SK).filter(function(k){return owned(k)&&!before[k]}).map(function(k){return SK[k].n});
-  showOverSlot('<div class="box"><h2>'+(fromHeliBoom?'МОЛОДЕЦ..':(modeGta?'ПОТРАЧЕНО':'Игра окончена'))+'</h2><p>'+LV[diff].n+': '+score+' очков'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+nw.join(', ')+'. Загляни в магазин!</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">Ещё раз</button><div class="lr"><button class="sec" id="lv">Сложность</button><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button></div></div>');
-  if($('go'))$('go').onclick=start;
-  if($('lv'))$('lv').onclick=function(){hideOverSlot();ready()};
+  showOverSlot('<div class="box"><h2>'+(fromHeliBoom?'МОЛОДЕЦ..':(modeGta?'ПОТРАЧЕНО':'Игра окончена'))+'</h2>'+duelLine+'<p>'+LV[diff].n+': '+score+' очков'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+nw.join(', ')+'. Загляни в магазин!</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">'+(mpCode?'Реванш в комнате':'Ещё раз')+'</button><div class="lr"><button class="sec" id="lv">'+(mpCode?'Выйти из дуэли':'Сложность')+'</button><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button></div></div>');
+  if($('go'))$('go').onclick=function(){start(mpSeed)};
+  if($('lv'))$('lv').onclick=async function(){hideOverSlot();if(mpCode)await leaveMpRoom();ready()};
   if($('shp'))$('shp').onclick=function(){hideOverSlot();shop()};
   if($('crd'))$('crd').onclick=function(){hideOverSlot();careShopScreen()};
 }
@@ -1745,16 +1935,13 @@ function bathScreen(){
     if(state!=='bath'||!bg2)return;
     bg2.clearRect(0,0,380,270);
 
-    // Ванночка (задний борт)
     bg2.fillStyle='#e0f2fe';bg2.strokeStyle='#0284c7';bg2.lineWidth=2.5;
     bg2.beginPath();bg2.ellipse(190,192,148,38,0,Math.PI,0);bg2.fill();bg2.stroke();
 
-    // Вода в ванночке с лёгкими волнами
     var wave=Math.sin(performance.now()/220)*2.5;
     bg2.fillStyle='rgba(56,189,248,.48)';
     bg2.beginPath();bg2.ellipse(190,196+wave,142,32,0,0,7);bg2.fill();
 
-    // Генерация струй из лейки при касании
     if(spraying){
       splashCd++;
       if(splashCd%4===0)sfxSplash();
@@ -1770,7 +1957,6 @@ function bathScreen(){
       }
     }
 
-    // Периодические капли, стекающие с мокрой шерсти свинки
     if(wetness>0.18&&Math.random()<wetness*0.45){
       drops.push({
         x:190+rnd(-58,52),
@@ -1782,7 +1968,6 @@ function bathScreen(){
       });
     }
 
-    // Свинка в ванночке (с учётом намокания и шапочки)
     var shOff=shakeAnim>0?Math.sin(shakeAnim*1.9)*7:0;
     if(shakeAnim>0)shakeAnim--;
     var spr=getSpr(curSkin(),modeBee,wetness,bathCap);
@@ -1792,13 +1977,11 @@ function bathScreen(){
     if(spr)bg2.drawImage(spr,-86,-62);
     bg2.restore();
 
-    // Физика капель воды
     for(var i=drops.length-1;i>=0;i--){
       var d=drops[i];
       d.vy+=0.24;
       d.x+=d.vx;
       d.y+=d.vy;
-      // Попадание на свинку
       if(!d.drip&&Math.abs(d.x-190)<74&&Math.abs(d.y-154)<42){
         wetness=Math.min(1,wetness+0.0045);
         clean=Math.min(100,clean+0.22);
@@ -1811,7 +1994,6 @@ function bathScreen(){
             life:90+rnd(0,50)
           });
         }
-        // Брызги в стороны
         d.vx=rnd(-2.4,2.4);
         d.vy=rnd(-2.2,-0.6);
         d.drip=true;
@@ -1825,7 +2007,6 @@ function bathScreen(){
       bg2.beginPath();bg2.arc(d.x,d.y,d.r,0,7);bg2.fill();
     }
 
-    // Мыльная пена и пузырьки на свинке
     for(var j=bubbles.length-1;j>=0;j--){
       var b=bubbles[j];
       b.life--;
@@ -1842,7 +2023,6 @@ function bathScreen(){
       bg2.restore();
     }
 
-    // Передний бортик ванночки
     var tubG=bg2.createLinearGradient(0,192,0,252);
     tubG.addColorStop(0,'#f8fafc');tubG.addColorStop(1,'#bae6fd');
     bg2.fillStyle=tubG;bg2.strokeStyle='#0284c7';bg2.lineWidth=2.5;
@@ -1853,7 +2033,6 @@ function bathScreen(){
     bg2.closePath();
     bg2.fill();bg2.stroke();
 
-    // Душевая лейка
     bg2.save();
     bg2.translate(sx,sy);
     bg2.rotate(-0.45);
@@ -2049,7 +2228,7 @@ function ready(){
   state='ready';score=0;syncHeliBtn();stepCare();hud();bg();drawPig();
   var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
   [1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
-  html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
+  html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><button class="sec v3btn" id="mpbtn">⚔️ Дуэль 1 на 1 (по сети)</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
   if(online)html+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
   html+='</div>';
   showMenuSlot(html);
@@ -2057,11 +2236,12 @@ function ready(){
   document.querySelectorAll('#menuslot .dbtn').forEach(function(b){
     b.onclick=function(){diff=+b.dataset.d;lbTab=diff;try{localStorage.setItem('gp_diff',diff)}catch(e){}loadLb();ready()}
   });
-  if($('go'))$('go').onclick=start;
+  if($('go'))$('go').onclick=function(){leaveMpRoom();start()};
+  if($('mpbtn'))$('mpbtn').onclick=mpLobbyScreen;
   if($('shp'))$('shp').onclick=shop;
   if($('crd'))$('crd').onclick=careShopScreen;
   if($('pwd'))$('pwd').onclick=passSettingsScreen;
-  if($('out'))$('out').onclick=function(){if(confirm('Выйти из аккаунта '+nick+'?'))logoutAccount()};
+  if($('out'))$('out').onclick=function(){if(confirm('Выйти из аккаунта '+nick+'?')){leaveMpRoom();logoutAccount()}};
   if(isAdmin&&$('adm'))$('adm').onclick=adminPanel;
   if($('mid'))$('mid').onclick=function(){if($('idl'))$('idl').textContent=uid};
 }
@@ -2518,6 +2698,7 @@ async function loadLb(){
 document.querySelectorAll('#tb button').forEach(function(b){b.onclick=function(){lbTab=+b.dataset.t;loadLb()}});
 document.addEventListener('keydown',function(e){if(e.target&&e.target.tagName==='INPUT')return;if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}else if(e.code==='KeyH'){e.preventDefault();buyHelicopter()}});
 document.addEventListener('pointerdown',function(e){if(state==='play'&&!(e.target&&e.target.closest&&e.target.closest('button,input')))jump()});
+window.addEventListener('beforeunload',function(){if(mpCode&&online&&uid){try{navigator.sendBeacon(CFG.databaseURL.replace(/\/$/,'')+'/rooms/'+mpCode+'/players/'+uid+'.json?auth='+(tok||''),JSON.stringify(null))}catch(e){}}});
 
 try{bg();drawPig()}catch(e){}
 if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
