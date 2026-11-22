@@ -40,6 +40,9 @@ canvas{display:block;width:100%;height:auto}
 .mode-chip.on.sgta{background:linear-gradient(90deg,#ff4d94,#ff9e00);color:#fff;border-color:#fde047;box-shadow:0 0 12px rgba(255,77,148,.5)}
 .mode-chip.on.sbee{background:linear-gradient(90deg,#f59e0b,#facc15);color:#1c1917;border-color:#fef08a;box-shadow:0 0 12px rgba(234,179,8,.55)}
 .mode-chip.on.smog{background:linear-gradient(90deg,#0284c7,#38bdf8);color:#fff;border-color:#bae6fd;box-shadow:0 0 12px rgba(56,189,248,.6)}
+.sup-txt{margin:4px 0 10px;font-size:14px;font-weight:600;color:var(--tx);line-height:1.45}
+.sup-btn{margin:0;padding:9px 14px;border-radius:10px;background:#ffdd2d;color:#111;border:0;font-size:13px;font-weight:800;width:auto}
+.sup-st{margin-left:8px;font-size:12px;color:var(--mu);font-weight:600}
 .alertbar{margin-top:8px;padding:8px 12px;border-radius:10px;background:rgba(220,38,38,.14);border:1px solid rgba(220,38,38,.45);color:#ef4444;font-weight:700;font-size:13px;display:none;align-items:center;justify-content:space-between;gap:8px}
 .alertbar.show{display:flex}
 .alertbar button{width:auto;margin:0;padding:5px 10px;font-size:12px}
@@ -103,6 +106,9 @@ li.me{color:var(--ac);font-weight:600}
 <button type="button" class="mode-chip sbee" id="bb" title="Тот кто пчелок уважает">🐝 Пчёлы</button>
 <button type="button" class="mode-chip smog" id="mgb" title="Я тебя могну">👁️ Могну</button>
 </div></div>
+<div class="card" id="supbox"><h2>Поддержать автора</h2>
+<p class="sup-txt">поддержать автора деньгами +79957282536 т-банк</p>
+<button type="button" class="sup-btn" id="cpnum">Скопировать номер</button><span class="sup-st" id="cpst"></span></div>
 </div>
 <div class="ov" id="ov"></div>
 <script>
@@ -129,6 +135,24 @@ try{
   var stt=localStorage.getItem('gp_care_ts');if(stt&&!isNaN(+stt))lastCareTick=+stt;
 }catch(e){}
 lbTab=diff;
+
+if($('cpnum')){
+  $('cpnum').onclick=function(){
+    var num='+79957282536';
+    function done(){if($('cpst'))$('cpst').textContent='Скопировано: '+num}
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(num).then(done).catch(function(){
+        var ta=document.createElement('textarea');ta.value=num;document.body.appendChild(ta);ta.select();
+        try{document.execCommand('copy')}catch(ex){}
+        document.body.removeChild(ta);done();
+      });
+    }else{
+      var ta=document.createElement('textarea');ta.value=num;document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy')}catch(ex){}
+      document.body.removeChild(ta);done();
+    }
+  };
+}
 
 function ov(htmlStr){
   var o=$('ov');
@@ -1002,7 +1026,7 @@ function drawEffects(){
     ctx.save();
     ctx.globalAlpha=Math.max(0,pp.l/45);
     if(pp.mog){
-      ctx.font='900 26px system-ui,sans-serif';
+      ctx.font='900 28px system-ui,sans-serif';
       ctx.textAlign='center';
       ctx.fillStyle='#ef4444';
       ctx.shadowColor='#7f1d1d';
