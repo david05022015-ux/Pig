@@ -142,6 +142,18 @@ li.me{color:var(--ac);font-weight:600}
 .tut-list{text-align:left;margin:8px 0;display:flex;flex-direction:column;gap:8px}
 .tut-item{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.4}
 .tut-item b{display:block;margin-bottom:2px;color:var(--tx)}
+.p-list{max-height:165px;overflow:auto;text-align:left;margin:6px 0;border:1px solid var(--bd);border-radius:10px;padding:4px 8px;background:var(--bg)}
+.p-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.p-item:last-child{border:0}
+.p-tag{font-size:11px;padding:2px 6px;border-radius:999px;font-weight:700;background:rgba(34,197,94,.16);color:#16a34a}
+.p-tag.far{background:rgba(148,163,184,.2);color:var(--mu)}
+.chat-box{max-height:175px;overflow:auto;text-align:left;margin:6px 0;border:1px solid var(--bd);border-radius:10px;padding:8px;background:var(--bg);display:flex;flex-direction:column;gap:6px}
+.chat-msg{font-size:13px;line-height:1.35;padding:5px 8px;border-radius:8px;background:var(--card);border:1px solid var(--bd)}
+.chat-msg b{color:var(--ac)}
+.chat-msg small{color:var(--mu);font-size:11px;margin-left:6px}
+.chat-row{display:flex;gap:6px;align-items:center}
+.chat-row input{margin:0;flex:1;font-size:15px;padding:8px 10px}
+.chat-row button{width:auto;margin:0;padding:8px 12px;font-size:13px}
 </style>
 </head>
 <body>
@@ -159,7 +171,7 @@ li.me{color:var(--ac);font-weight:600}
 <div class="splash-card" id="splashbox">
 <span class="splash-badge">СЕЗОН · СВИНКА-ПОНЧИК &amp; ПИТБАЙК</span>
 <div class="splash-title">🐹 Морская свинка: беги и прыгай</div>
-<div class="splash-sub">Трать монеты 🪙 на еду, купание, скины и вертолёт · Уходи от ДПС на питбайке · Пройди обучение</div>
+<div class="splash-sub">Трать монеты 🪙 на еду, купание, скины и вертолёт · Чат в радиусе 5 км · Звонки не от Google</div>
 <div class="lr" style="max-width:380px;margin:0 auto">
 <button type="button" class="splash-cta" id="splashplay">▶ Играть</button>
 <button type="button" class="sec" id="splashtut" style="width:auto;margin-top:6px">🎓 Обучение</button>
@@ -222,6 +234,7 @@ var hunger=100,clean=100,lastCareTick=Date.now(),lastFeedAlert=0,careCause='';
 var wetness=0,bathCap=false;
 var beeFuel=100,beeFlapCd=0,beeHoldingUp=false,beeHoldingDown=false;
 var pitGas=45,dpsCatch=28,pitWheelSpin=0;
+var myCoords=null,geoRequested=false,activePlayers=[],nearbyChatMsgs=[],socialTimer=0,allowNoGeoChat=true;
 var mpCode=null,mpRole=null,mpSeed=0,mpPollTimer=0,mpSendTimer=0,mpPeer=null,mpInterpY=GY,mpInterpVy=0;
 var uiDragState={active:false,mode:null,lx:0,ly:0,yaw:0.65,pitch:0.22,autoRot:true,spraying:false,sx:190,sy:64,v3Key:'classic'};
 
@@ -286,6 +299,112 @@ try{
 }catch(e){}
 lbTab=diff;
 if(isLocalOrNamedAdmin())isAdmin=true;
+
+function requestGeoOnce(){
+  if(geoRequested)return;
+  geoRequested=true;
+  if(!('geolocation' in navigator))return;
+  try{
+    navigator.geolocation.getCurrentPosition(function(pos){
+      myCoords={lat:pos.coords.latitude,lon:pos.coords.longitude};
+    },function(){},{enableHighAccuracy:false,timeout:6000,maximumAge:30000});
+  }catch(e){}
+}
+
+function calcDistKm(a,b){
+  if(!a||!b||typeof a.lat!=='number'||typeof b.lat!=='number')return null;
+  var R=6371;
+  var dLat=(b.lat-a.lat)*Math.PI/180;
+  var dLon=(b.lon-a.lon)*Math.PI/180;
+  var s1=Math.sin(dLat/2),s2=Math.sin(dLon/2);
+  var aa=s1*s1+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*s2*s2;
+  return 2*R*Math.atan2(Math.sqrt(aa),Math.sqrt(1-aa));
+}
+
+function renderSocialLists(){
+  var plEl=$('playerslist');
+  var chEl=$('nearbychatbox');
+  if(plEl){
+    if(!activePlayers.length){
+      plEl.innerHTML='<div class="p-item"><span>Пока никого рядом нет (проверка каждые 3 сек)</span></div>';
+    }else{
+      plEl.innerHTML=activePlayers.map(function(p){
+        var dTxt='';
+        var isNear=true;
+        if(myCoords&&p.coords){
+          var km=calcDistKm(myCoords,p.coords);
+          if(typeof km==='number'&&isFinite(km)){
+            isNear=km<=5.0;
+            dTxt=km<1?Math.round(km*1000)+' м':km.toFixed(1)+' км';
+          }
+        }
+        var badge='<span class="p-tag'+(isNear?'':' far')+'">'+(dTxt?(isNear?'В 5 км · '+dTxt:dTxt):'Онлайн')+'</span>';
+        return '<div class="p-item"><span><b>'+esc(p.nick||'Игрок')+'</b> <small style="color:var(--mu)">('+esc(p.st||'в меню')+')</small></span>'+badge+'</div>';
+      }).join('');
+    }
+  }
+  if(chEl){
+    var filtered=nearbyChatMsgs.filter(function(m){
+      if(!myCoords||!m.coords)return allowNoGeoChat;
+      var km=calcDistKm(myCoords,m.coords);
+      return typeof km==='number'&&km<=5.0;
+    });
+    if(!filtered.length){
+      chEl.innerHTML='<div class="chat-msg"><span>Сообщений в радиусе 5 км пока нет. Напиши первым!</span></div>';
+    }else{
+      chEl.innerHTML=filtered.slice(-25).map(function(m){
+        var dt=new Date(m.ts||Date.now());
+        var tm=(dt.getHours()<10?'0'+dt.getHours():dt.getHours())+':'+(dt.getMinutes()<10?'0'+dt.getMinutes():dt.getMinutes());
+        return '<div class="chat-msg"><b>'+esc(m.nick||'Игрок')+'</b><small>'+tm+'</small><div>'+esc(m.text||'')+'</div></div>';
+      }).join('');
+      chEl.scrollTop=chEl.scrollHeight;
+    }
+  }
+}
+
+async function syncPresenceAndChat(){
+  if(!online||!uid)return;
+  try{
+    await fput('presence/'+uid,{
+      nick:nick||'Гость',
+      st:state==='play'?'в забеге':(mpCode?'в дуэли':'в меню'),
+      coords:myCoords||null,
+      ts:Date.now()
+    });
+    var pr=await fget('presence')||{};
+    var now=Date.now();
+    var arr=[];
+    Object.keys(pr).forEach(function(k){
+      var item=pr[k];
+      if(!item||(now-(item.ts||0))>22000)return;
+      arr.push(item);
+    });
+    activePlayers=arr;
+
+    var ch=await fget('chat_nearby','&orderBy="ts"&limitToLast=30')||{};
+    var list=[];
+    Object.keys(ch).forEach(function(k){
+      if(ch[k]&&ch[k].text)list.push(ch[k]);
+    });
+    list.sort(function(a,b){return (a.ts||0)-(b.ts||0)});
+    nearbyChatMsgs=list;
+    renderSocialLists();
+  }catch(e){}
+}
+
+function startSocialLoop(){
+  if(socialTimer)clearInterval(socialTimer);
+  requestGeoOnce();
+  syncPresenceAndChat();
+  socialTimer=setInterval(syncPresenceAndChat,3000);
+}
+
+function openCallRoom(isVideo){
+  var roomId='piggy-'+(mpCode||'lobby')+'-'+(nick||'guest').toLowerCase().replace(/[^a-z0-9]/g,'');
+  var url='https://meet.jit.si/'+encodeURIComponent(roomId)+(isVideo?'':'#config.startWithVideoMuted=true');
+  var win=window.open(url,'_blank','noopener,noreferrer');
+  if(!win&&$('chatst'))$('chatst').textContent='Ссылка звонка: '+url;
+}
 
 function clearOtherModes(keep){
   if(keep!=='67')mode67=false;
@@ -1337,6 +1456,58 @@ function showWaitingRoom(){
   if($('mpcancel'))$('mpcancel').onclick=async function(){await leaveMpRoom();ready()};
 }
 
+function playersAndChatScreen(){
+  var wasPlay=(state==='play');
+  if(wasPlay)paused=true;
+  requestGeoOnce();
+  var html='<div class="box"><h2>👥 Игроки рядом и чат (5 км)</h2><p>Проверка игроков каждые 3 сек · Звонки через Jitsi (не Google)</p>';
+  html+='<div class="p-list" id="playerslist"><div class="p-item"><span>Загружаю игроков...</span></div></div>';
+  html+='<div class="lr"><button class="sec" id="callaud">📞 Аудиозвонок</button><button class="sec" id="callvid">📹 Видеозвонок</button></div>';
+  html+='<div class="chat-box" id="nearbychatbox"><div class="chat-msg"><span>Загружаю чат...</span></div></div>';
+  html+='<div class="chat-row"><input type="text" id="chatinp" maxlength="160" autocomplete="off" placeholder="Написать в чат (5 км)..."><button id="chatsend">➤</button></div>';
+  html+='<div class="msg" id="chatst"></div>';
+  html+='<button class="sec" id="socbk">Назад</button></div>';
+  ov(html);
+  renderSocialLists();
+  syncPresenceAndChat();
+
+  if($('callaud'))$('callaud').onclick=function(){openCallRoom(false)};
+  if($('callvid'))$('callvid').onclick=function(){openCallRoom(true)};
+
+  async function sendMsg(){
+    var inp=$('chatinp');
+    var txt=inp?inp.value.trim():'';
+    if(!txt)return;
+    if(!online){
+      nearbyChatMsgs.push({nick:nick||'Гость',text:txt,coords:myCoords,ts:Date.now()});
+      if(inp)inp.value='';
+      renderSocialLists();
+      return;
+    }
+    try{
+      await fput('chat_nearby/'+Date.now()+'_'+(uid||'u'),{
+        uid:uid||'u',
+        nick:nick||'Гость',
+        text:txt,
+        coords:myCoords||null,
+        ts:Date.now()
+      });
+      if(inp)inp.value='';
+      await syncPresenceAndChat();
+    }catch(e){
+      if($('chatst'))$('chatst').textContent='Не удалось отправить сообщение';
+    }
+  }
+  if($('chatsend'))$('chatsend').onclick=sendMsg;
+  if($('chatinp'))$('chatinp').onkeydown=function(e){if(e.key==='Enter')sendMsg()};
+  if($('socbk'))$('socbk').onclick=function(){
+    closeModalOv();
+    if(wasPlay){paused=false;t0=performance.now();requestAnimationFrame(loop)}
+    else if(nick&&ok(nick))ready();
+    else nickScreen();
+  };
+}
+
 function tutorialScreen(){
   var wasPlay=(state==='play');
   if(wasPlay)paused=true;
@@ -1345,7 +1516,7 @@ function tutorialScreen(){
   html+='<div class="tut-item"><b>1. Прыжок и полёт</b>Тапай по экрану, жми Пробел или ↑. В режиме 🐝 Пчёлы подлёты тратят энергию крыльев, а ↓ / S ускоряет спуск.</div>';
   html+='<div class="tut-item"><b>2. Монеты 🪙 и вкусняшки</b>Собирай монетки на трассе и в конце забегов. Трать их на еду, купание, скины (включая нового 🍩 Пончика) и 🚁 Вертолёт.</div>';
   html+='<div class="tut-item"><b>3. Мир питбайка и погоня ДПС</b>Включи «🏍️ Питбайк ДПС» и тапай чаще, чтобы подкидывать газ: если не тапать, экипаж ДПС догонит!</div>';
-  html+='<div class="tut-item"><b>4. Уход, 3D и дуэль 1 на 1</b>Корми и мой свинку в «Еда и уход», крути модели в 3D и зови друга в комнату по 4-значному коду.</div>';
+  html+='<div class="tut-item"><b>4. Игроки рядом, чат и звонки</b>Открывай «👥 Игроки и чат (5 км)» — список обновляется каждые 3 сек, можно общаться в радиусе 5 км и зайти в звонок/видео.</div>';
   html+='</div>';
   html+='<button id="tutgo">▶ Начать играть</button><button class="sec" id="tutbk">Закрыть</button></div>';
   ov(html);
@@ -2188,7 +2359,7 @@ function loop(now){
         mogFlash=14;
         sfxMog();
         addBurst(nearObs.x+nearObs.w/2,GY-8,'#ef4444',16);
-        pops.push({x:nearObs.x+nearObs.w/2,y:GY-nearObs.h-18,tx:'МОГНУЛ!',c:'#ef4444',mog:true,l:45});
+        pops.push({x:nearObs.x+nearObs.w/2,y:GY-o.h-18,tx:'МОГНУЛ!',c:'#ef4444',mog:true,l:45});
       }
     }
   }
@@ -2743,7 +2914,7 @@ function ready(){
   state='ready';score=0;syncHeliBtn();stepCare();hud();bg();drawPig();syncTopAbuseBanner();
   var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Баланс: <b>'+coins+' 🪙</b> · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
   [1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+esc(LV[k].n)+'</span><small>рекорд '+bests[k]+'</small></button>'});
-  html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков или купи за 250 🪙')+'</p><button id="go">▶ Старт</button><button class="sec" id="tutbtn">🎓 Обучение для новичков</button><button class="sec v3btn" id="mpbtn">⚔️ Дуэль 1 на 1 (по сети)</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Абьюз 100+</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
+  html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков или купи за 250 🪙')+'</p><button id="go">▶ Старт</button><button class="sec" id="tutbtn">🎓 Обучение для новичков</button><button class="sec" id="socbtn">👥 Игроки и чат (5 км)</button><button class="sec v3btn" id="mpbtn">⚔️ Дуэль 1 на 1 (по сети)</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Абьюз 100+</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
   if(online)html+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
   html+='</div>';
   showMenuSlot(html);
@@ -2753,6 +2924,7 @@ function ready(){
   });
   if($('go'))$('go').onclick=function(){leaveMpRoom();start()};
   if($('tutbtn'))$('tutbtn').onclick=function(){tutorialScreen()};
+  if($('socbtn'))$('socbtn').onclick=function(){playersAndChatScreen()};
   if($('mpbtn'))$('mpbtn').onclick=mpLobbyScreen;
   if($('shp'))$('shp').onclick=shop;
   if($('crd'))$('crd').onclick=careShopScreen;
@@ -3433,7 +3605,14 @@ document.addEventListener('pointerdown',function(e){
     jump();
   }
 });
-window.addEventListener('beforeunload',function(){if(mpCode&&online&&uid){try{navigator.sendBeacon(CFG.databaseURL.replace(/\/$/,'')+'/rooms/'+mpCode+'/players/'+uid+'.json?auth='+(tok||''),JSON.stringify(null))}catch(e){}}});
+window.addEventListener('beforeunload',function(){
+  if(online&&uid){
+    try{navigator.sendBeacon(CFG.databaseURL.replace(/\/$/,'')+'/presence/'+uid+'.json?auth='+(tok||''),JSON.stringify(null))}catch(e){}
+  }
+  if(mpCode&&online&&uid){
+    try{navigator.sendBeacon(CFG.databaseURL.replace(/\/$/,'')+'/rooms/'+mpCode+'/players/'+uid+'.json?auth='+(tok||''),JSON.stringify(null))}catch(e){}
+  }
+});
 
 try{bg();drawPig();syncTopAbuseBanner()}catch(e){}
 if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
@@ -3447,6 +3626,7 @@ if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
         var ab=await fget('abuse_banner');
         if(ab&&ab.msg){topAbuseMsg=String(ab.msg);syncTopAbuseBanner()}
       }catch(e){}
+      startSocialLoop();
     }
     if($('ln'))$('ln').textContent=online?'Ник закрепляется за устройством или паролем: можно играть и с телефона, и с ПК.':'Таблица пока локальная (только на этом устройстве).';
     loadLb();
