@@ -109,6 +109,8 @@ li.me{color:var(--ac);font-weight:600}
 .v3wrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--bd);background:radial-gradient(circle at 50% 35%,#1e293b,#09090b);margin:8px 0;touch-action:none;cursor:grab}
 .v3wrap:active{cursor:grabbing}
 .v3wrap canvas{display:block;width:100%;min-height:0;height:auto}
+.bathwrap{position:relative;border-radius:14px;overflow:hidden;border:1.5px solid #38bdf8;background:linear-gradient(180deg,#bae6fd,#e0f2fe 70%,#0284c7);margin:8px 0;touch-action:none;cursor:pointer;box-shadow:0 8px 24px rgba(2,132,199,.25)}
+.bathwrap canvas{display:block;width:100%;min-height:0;height:auto}
 .v3pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:8px 0}
 .v3pills button{width:auto;margin:0;padding:6px 10px;font-size:12px}
 .lim{display:inline-block;align-self:flex-start;background:linear-gradient(90deg,#16a34a,#06b6d4);color:#fff;font-size:10px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:5px;margin-bottom:2px}
@@ -181,6 +183,7 @@ var cv=$('c'),ctx=cv.getContext('2d'),W=800,H=520,GY=445;
 var ccv=$('cc'),cctx=ccv?ccv.getContext('2d'):null;
 var uid=null,nick=null,accPass='',state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},gold=false,skin='classic',banner=0,GRALL={},passAuth=false,mode67=false,modeGta=false,modeBee=false,modeMog=false,gtaTheme='night',muted=false,fullSc=false;
 var hunger=100,clean=100,lastCareTick=Date.now(),lastFeedAlert=0,careCause='';
+var wetness=0,bathCap=false;
 
 try{
   nick=localStorage.getItem('gp_nick');
@@ -194,6 +197,8 @@ try{
   var sh=localStorage.getItem('gp_hunger');if(sh!==null&&!isNaN(+sh))hunger=Math.max(0,Math.min(100,+sh));
   var sc2=localStorage.getItem('gp_clean');if(sc2!==null&&!isNaN(+sc2))clean=Math.max(0,Math.min(100,+sc2));
   var stt=localStorage.getItem('gp_care_ts');if(stt&&!isNaN(+stt))lastCareTick=+stt;
+  var swt=localStorage.getItem('gp_wet');if(swt!==null&&!isNaN(+swt))wetness=Math.max(0,Math.min(1,+swt));
+  bathCap=localStorage.getItem('gp_cap')==='1';
 }catch(e){}
 lbTab=diff;
 
@@ -265,10 +270,11 @@ function showOverSlot(htmlStr){
   sl.innerHTML=htmlStr;
   sl.classList.add('show');
 }
-var v3Raf=0;
+var v3Raf=0,bathRaf=0;
 function stop3D(){if(v3Raf){cancelAnimationFrame(v3Raf);v3Raf=0}}
+function stopBath(){if(bathRaf){cancelAnimationFrame(bathRaf);bathRaf=0}}
 function ov(htmlStr){
-  stop3D();
+  stop3D();stopBath();
   hideOverSlot();
   hideMenuSlot();
   var o=$('ov');
@@ -278,7 +284,7 @@ function ov(htmlStr){
   o.scrollTop=0;
 }
 function closeModalOv(){
-  stop3D();
+  stop3D();stopBath();
   var o=$('ov');
   if(!o)return;
   o.innerHTML='';
@@ -311,6 +317,8 @@ function saveCare(){
     localStorage.setItem('gp_hunger',String(Math.round(hunger*10)/10));
     localStorage.setItem('gp_clean',String(Math.round(clean*10)/10));
     localStorage.setItem('gp_care_ts',String(lastCareTick));
+    localStorage.setItem('gp_wet',String(Math.round(wetness*100)/100));
+    localStorage.setItem('gp_cap',bathCap?'1':'0');
   }catch(e){}
 }
 
@@ -321,6 +329,10 @@ function stepCare(){
   if(dtSec>0&&state!=='play'){
     hunger=Math.max(0,hunger-dtSec*(100/4200));
     clean=Math.max(0,clean-dtSec*(100/4800));
+  }
+  if(dtSec>0&&wetness>0&&state!=='bath'){
+    wetness=Math.max(0,wetness-dtSec*(1/480));
+    if(wetness<=0.05)bathCap=false;
   }
   if(hunger<=35){
     notifyFeedPig(hunger<=12?'Срочно покорми свинку, она умирает от голода!':'Покорми свинку');
@@ -450,6 +462,7 @@ function sfxHit(){tone(200,.26,'sawtooth',.12,65)}
 function sfxShieldBreak(){tone(480,.22,'sawtooth',.13,130)}
 function sfxHeliStart(){tone(160,.25,'sawtooth',.11,420);setTimeout(function(){tone(240,.2,'triangle',.1,560)},110)}
 function sfxHeliBoom(){tone(140,.55,'sawtooth',.18,32);setTimeout(function(){tone(90,.6,'square',.14,26)},90)}
+function sfxSplash(){tone(420+Math.random()*280,.07,'sine',.035,760)}
 function sfxTreat(t){
   if(t===0){tone(587.33,.1,'sine',.1,880)}
   else if(t===1){tone(523.25,.09,'triangle',.11);setTimeout(function(){tone(783.99,.14,'triangle',.11)},65)}
@@ -583,8 +596,41 @@ function drawBeeSuit(g){
   g.restore();
 }
 
-function mk(k,withBee){
+function drawBathCap2D(g){
+  g.save();
+  g.translate(122,30);
+  g.rotate(-0.18);
+  var cg=g.createLinearGradient(0,-20,0,12);
+  cg.addColorStop(0,'#f472b6');
+  cg.addColorStop(.6,'#ec4899');
+  cg.addColorStop(1,'#be185d');
+  g.fillStyle=cg;
+  g.strokeStyle='#9d174d';
+  g.lineWidth=1.5;
+  g.beginPath();
+  g.ellipse(0,0,26,18,0,Math.PI,0);
+  g.quadraticCurveTo(26,6,0,6);
+  g.quadraticCurveTo(-26,6,-26,0);
+  g.closePath();
+  g.fill();
+  g.stroke();
+  g.fillStyle='#fbcfe8';
+  g.beginPath();
+  g.ellipse(0,4.5,27,4.2,0,0,7);
+  g.fill();
+  g.stroke();
+  g.fillStyle='rgba(255,255,255,.72)';
+  [[-12,-7],[-3,-11],[8,-8],[15,-3],[-16,-1],[2,-3]].forEach(function(d){
+    g.beginPath();g.arc(d[0],d[1],2.1,0,7);g.fill();
+  });
+  g.fillStyle='#fde047';
+  g.beginPath();g.arc(0,-18,4.2,0,7);g.fill();
+  g.restore();
+}
+
+function mk(k,withBee,wetLvl,withCap){
   var P=SK[k]||SK.classic,c=document.createElement('canvas');c.width=172;c.height=124;var g=c.getContext('2d'),s=1;
+  var w=Math.max(0,Math.min(1,wetLvl||0));
   function r(){s=(s*16807)%2147483647;return s/2147483647}
   g.translate(0,10);
   if(P.ufo){
@@ -596,21 +642,26 @@ function mk(k,withBee){
       g.fillStyle='#dcfce7';g.beginPath();g.arc(a[2]-1.6,a[3]-1.6,1.8,0,7);g.fill();
     });
   }
-  if(P.oreo){
+  if(P.oreo&&w<0.65){
+    var fluffScale=1-w;
     for(var tf=0;tf<38;tf++){
       var angT=Math.PI+tf*(Math.PI/37);
       var bx=74+Math.cos(angT)*64,by=56+Math.sin(angT)*35;
       g.strokeStyle=tf%2?'#ffffff':'#e7e5e4';
-      g.lineWidth=2.6;g.lineCap='round';
-      g.beginPath();g.moveTo(bx,by);g.lineTo(bx+Math.cos(angT)*6-2,by+Math.sin(angT)*6);g.stroke();
+      g.lineWidth=2.6*fluffScale;g.lineCap='round';
+      g.beginPath();g.moveTo(bx,by);g.lineTo(bx+(Math.cos(angT)*6-2)*fluffScale,by+Math.sin(angT)*6*fluffScale);g.stroke();
     }
-    for(var ht=0;ht<14;ht++){
-      var hx=112+ht*2.4,hy=26-Math.sin((ht/13)*Math.PI)*6;
-      g.strokeStyle='#ffffff';g.lineWidth=2.4;g.lineCap='round';
-      g.beginPath();g.moveTo(hx,hy+3);g.lineTo(hx-2,hy-5);g.stroke();
+    if(!withCap){
+      for(var ht=0;ht<14;ht++){
+        var hx=112+ht*2.4,hy=26-Math.sin((ht/13)*Math.PI)*6;
+        g.strokeStyle='#ffffff';g.lineWidth=2.4*fluffScale;g.lineCap='round';
+        g.beginPath();g.moveTo(hx,hy+3);g.lineTo(hx-2*fluffScale,hy-5*fluffScale);g.stroke();
+      }
     }
   }
-  g.save();g.beginPath();g.ellipse(70,58,62,34,0,0,7);g.ellipse(125,54,32,27,0,0,7);
+  g.save();
+  var bodyRy=34-w*2.6;
+  g.beginPath();g.ellipse(70,58+w*1.5,62,bodyRy,0,0,7);g.ellipse(125,54+w*1.2,32,27-w*1.6,0,0,7);
   var gr=g.createLinearGradient(0,24,0,92);gr.addColorStop(0,P.a0);gr.addColorStop(.55,P.a1);gr.addColorStop(1,P.a2);
   g.fillStyle=gr;g.fill();g.clip();
   g.fillStyle=P.bel;g.beginPath();g.ellipse(72,92,52,16,0,0,7);g.fill();
@@ -634,13 +685,28 @@ function mk(k,withBee){
     eg.addColorStop(1,'rgba(244,242,238,0)');
     g.fillStyle=eg;g.beginPath();g.arc(107,35,P.oreo?20:18,0,7);g.fill();
   }
-  var fc=P.oreo?1850:(P.cali?1400:1000),fl=P.oreo?6.5:(P.cali?5:3);
+  var fc=P.oreo?1850:(P.cali?1400:1000),fl=(P.oreo?6.5:(P.cali?5:3))*(1+w*0.55);
   for(var i=0;i<fc;i++){var x=r()*172,y=r()*104,l=fl+r()*6;
-    g.strokeStyle=r()>.5?P.fd:P.fl;g.lineWidth=P.oreo?1.15:(P.cali?.95:.8);
-    g.beginPath();g.moveTo(x,y);g.lineTo(x-l,y+1+r()*3.5);g.stroke();}
+    g.strokeStyle=r()>.5?P.fd:P.fl;g.lineWidth=(P.oreo?1.15:(P.cali?.95:.8))*(1+w*0.35);
+    g.beginPath();g.moveTo(x,y);g.lineTo(x-l,y+(1+r()*3.5)*(1-w*0.65));g.stroke();}
+  if(w>0.05){
+    g.fillStyle='rgba(15,23,42,'+(w*0.26).toFixed(2)+')';
+    g.fillRect(0,0,172,114);
+    var shG=g.createLinearGradient(0,24,0,64);
+    shG.addColorStop(0,'rgba(224,242,254,'+(w*0.55).toFixed(2)+')');
+    shG.addColorStop(1,'rgba(224,242,254,0)');
+    g.fillStyle=shG;
+    g.beginPath();g.ellipse(76,36,56,11,-.05,0,7);g.fill();
+    g.fillStyle='rgba(186,230,253,'+(w*0.85).toFixed(2)+')';
+    [[34,78],[54,84],[78,86],[102,82],[126,74]].forEach(function(dr){
+      g.beginPath();g.arc(dr[0],dr[1],2.2,0,7);g.fill();
+    });
+  }
   g.restore();
-  g.save();g.translate(106,33);g.rotate(-.55);g.fillStyle=P.ear;g.beginPath();g.ellipse(0,0,P.oreo?13.5:12,P.oreo?9.5:8.5,0,0,7);g.fill();
-  g.fillStyle=P.ei;g.beginPath();g.ellipse(1,0,7.5,4.8,0,0,7);g.fill();g.restore();
+  if(!withCap){
+    g.save();g.translate(106,33);g.rotate(-.55);g.fillStyle=P.ear;g.beginPath();g.ellipse(0,0,P.oreo?13.5:12,P.oreo?9.5:8.5,0,0,7);g.fill();
+    g.fillStyle=P.ei;g.beginPath();g.ellipse(1,0,7.5,4.8,0,0,7);g.fill();g.restore();
+  }
   g.fillStyle=P.ufo?'#052e16':'#1a1110';g.beginPath();g.arc(134,45,P.cali||P.oreo||P.ufo?5.8:5.2,0,7);g.fill();
   g.strokeStyle='rgba(30,15,8,.45)';g.lineWidth=1.2;g.beginPath();g.arc(134,45,P.cali||P.oreo||P.ufo?6.8:6.2,0,7);g.stroke();
   g.fillStyle=P.ufo?'#86efac':'#fff';g.beginPath();g.arc(136,43,2,0,7);g.fill();
@@ -650,7 +716,9 @@ function mk(k,withBee){
   [-6,0,6].forEach(function(p){g.beginPath();g.moveTo(152,58);g.lineTo(170,58+p);g.stroke()});
   if(withBee)drawBeeSuit(g);
   else if(P.viceOutfit)drawViceOutfit(g);
-  if(P.crown){
+  if(withCap){
+    drawBathCap2D(g);
+  }else if(P.crown){
     g.fillStyle='#ffd54a';g.strokeStyle='#b8860b';g.lineWidth=1.2;
     g.beginPath();g.moveTo(112,29);g.lineTo(110,13);g.lineTo(117,21);g.lineTo(123,8);g.lineTo(129,21);g.lineTo(136,13);g.lineTo(134,29);g.closePath();g.fill();g.stroke();
     [[123,19,2.2,'#e53935'],[116,25,1.6,'#42a5f5'],[130,25,1.6,'#66bb6a']].forEach(function(j){
@@ -660,10 +728,13 @@ function mk(k,withBee){
   if(P.ufo)drawUfo(g,86,93,1.15);
   return c;
 }
-function getSpr(k,bee){
+function getSpr(k,bee,forceWet,forceCap){
   try{
-    if(bee){if(!SPR_BEE[k])SPR_BEE[k]=mk(k,true);return SPR_BEE[k]}
-    if(!SPR[k])SPR[k]=mk(k,false);return SPR[k];
+    var wStep=(typeof forceWet==='number')?Math.round(forceWet*4):Math.round(wetness*4);
+    var capFlag=(typeof forceCap==='boolean')?forceCap:bathCap;
+    var cacheKey=k+'_'+(bee?1:0)+'_'+wStep+'_'+(capFlag?1:0);
+    if(!SPR[cacheKey])SPR[cacheKey]=mk(k,bee,wStep/4,capFlag);
+    return SPR[cacheKey];
   }catch(e){return null}
 }
 function myGR(){return(nick&&GRALL[nick.toLowerCase()])||{}}
@@ -1531,6 +1602,7 @@ function loop(now){
   if(shield>0)shield=Math.max(0,shield-dt);
   if(joyTimer>0)joyTimer=Math.max(0,joyTimer-dt);
   if(hiJump>0&&Math.random()<.45)parts.push({x:px-30,y:py-rnd(15,45),vx:-spd*.6,vy:rnd(-.8,.8),l:18,ml:18,c:'#fb923c',r:rnd(2,4)});
+  if(wetness>0.2&&Math.random()<.28)parts.push({x:px+rnd(-28,28),y:py-rnd(12,35),vx:-spd*.4+rnd(-1,1),vy:rnd(0.5,2.2),l:20,ml:20,c:'#38bdf8',r:rnd(1.8,3.2)});
   mTimer-=dt;
   if(mTimer<=0){
     var customPlaying=(mode67&&track67Ok&&track67&&!track67.paused)||(modeGta&&trackGtaOk&&trackGta&&!trackGta.paused)||(modeBee&&trackBeeOk&&trackBee&&!trackBee.paused)||(modeMog&&trackMogOk&&trackMog&&!trackMog.paused);
@@ -1620,6 +1692,188 @@ function over(fromHeliBoom){
   if($('crd'))$('crd').onclick=function(){hideOverSlot();careShopScreen()};
 }
 
+function bathScreen(){
+  state='bath';
+  bathCap=true;
+  saveCare();
+  var html='<div class="box"><h2>🛁 Купание с физикой воды</h2>';
+  html+='<p>Води пальцем или мышкой по свинке: лейка намочит шерсть, взбьёт пену и поднимет чистоту!</p>';
+  html+='<div class="bathwrap" id="bw"><canvas id="bc" width="380" height="270"></canvas></div>';
+  html+='<div class="stbar">';
+  html+='<div class="strow"><div class="sthead"><span>🧼 Чистота</span><span id="bclt">'+Math.round(clean)+'%</span></div><div class="mtr"><div class="mfl" id="bclf" style="width:'+Math.round(clean)+'%;background:#38bdf8"></div></div></div>';
+  html+='<div class="strow"><div class="sthead"><span>💧 Влажность шерсти</span><span id="bwtt">'+Math.round(wetness*100)+'%</span></div><div class="mtr"><div class="mfl" id="bwtf" style="width:'+Math.round(wetness*100)+'%;background:#0284c7"></div></div></div>';
+  html+='</div>';
+  html+='<div class="lr"><button class="sec" id="bcap">'+(bathCap?'🎀 Снять шапочку':'🎀 Надеть шапочку')+'</button><button class="sec" id="bshake">💨 Встряхнуть (высушить)</button></div>';
+  html+='<button id="bdone">Готово</button></div>';
+  ov(html);
+
+  var bc=$('bc'),bg2=bc?bc.getContext('2d'):null,bw=$('bw');
+  var drops=[],bubbles=[],spraying=false,sx=190,sy=64,shakeAnim=0,splashCd=0;
+
+  if($('bcap'))$('bcap').onclick=function(){
+    bathCap=!bathCap;saveCare();
+    $('bcap').textContent=bathCap?'🎀 Снять шапочку':'🎀 Надеть шапочку';
+  };
+  if($('bshake'))$('bshake').onclick=function(){
+    shakeAnim=24;
+    var count=Math.max(12,Math.round(wetness*42));
+    for(var i=0;i<count;i++){
+      var ang=rnd(-Math.PI,0);
+      var sp=rnd(2.5,6.8);
+      drops.push({x:190+rnd(-55,55),y:150+rnd(-25,20),vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-1.2,r:rnd(2.2,4),foam:false});
+    }
+    wetness=0;saveCare();sfxWin();
+  };
+  if($('bdone'))$('bdone').onclick=function(){
+    if($('abar')&&hunger>35)$('abar').classList.remove('show');
+    careShopScreen();
+  };
+
+  function updatePtr(e){
+    if(!bc)return;
+    var rect=bc.getBoundingClientRect();
+    sx=(e.clientX-rect.left)*(380/rect.width);
+    sy=Math.max(24,Math.min(145,(e.clientY-rect.top)*(270/rect.height)));
+  }
+  if(bw){
+    bw.addEventListener('pointerdown',function(e){spraying=true;updatePtr(e);initAudio()});
+    bw.addEventListener('pointermove',function(e){if(spraying)updatePtr(e)});
+    window.addEventListener('pointerup',function(){spraying=false});
+  }
+
+  function bathLoop(){
+    if(state!=='bath'||!bg2)return;
+    bg2.clearRect(0,0,380,270);
+
+    // Ванночка (задний борт)
+    bg2.fillStyle='#e0f2fe';bg2.strokeStyle='#0284c7';bg2.lineWidth=2.5;
+    bg2.beginPath();bg2.ellipse(190,192,148,38,0,Math.PI,0);bg2.fill();bg2.stroke();
+
+    // Вода в ванночке с лёгкими волнами
+    var wave=Math.sin(performance.now()/220)*2.5;
+    bg2.fillStyle='rgba(56,189,248,.48)';
+    bg2.beginPath();bg2.ellipse(190,196+wave,142,32,0,0,7);bg2.fill();
+
+    // Генерация струй из лейки при касании
+    if(spraying){
+      splashCd++;
+      if(splashCd%4===0)sfxSplash();
+      for(var k=0;k<4;k++){
+        drops.push({
+          x:sx-16+rnd(-6,6),
+          y:sy+18+rnd(-3,3),
+          vx:rnd(-0.9,0.7),
+          vy:rnd(2.2,4.2),
+          r:rnd(2.2,3.6),
+          foam:false
+        });
+      }
+    }
+
+    // Периодические капли, стекающие с мокрой шерсти свинки
+    if(wetness>0.18&&Math.random()<wetness*0.45){
+      drops.push({
+        x:190+rnd(-58,52),
+        y:186+rnd(-4,8),
+        vx:rnd(-0.3,0.3),
+        vy:rnd(0.8,2.0),
+        r:rnd(2.4,3.8),
+        drip:true
+      });
+    }
+
+    // Свинка в ванночке (с учётом намокания и шапочки)
+    var shOff=shakeAnim>0?Math.sin(shakeAnim*1.9)*7:0;
+    if(shakeAnim>0)shakeAnim--;
+    var spr=getSpr(curSkin(),modeBee,wetness,bathCap);
+    bg2.save();
+    bg2.translate(190+shOff,152);
+    bg2.scale(1.18,1.18);
+    if(spr)bg2.drawImage(spr,-86,-62);
+    bg2.restore();
+
+    // Физика капель воды
+    for(var i=drops.length-1;i>=0;i--){
+      var d=drops[i];
+      d.vy+=0.24;
+      d.x+=d.vx;
+      d.y+=d.vy;
+      // Попадание на свинку
+      if(!d.drip&&Math.abs(d.x-190)<74&&Math.abs(d.y-154)<42){
+        wetness=Math.min(1,wetness+0.0045);
+        clean=Math.min(100,clean+0.22);
+        lastCareTick=Date.now();
+        if(Math.random()<0.42&&bubbles.length<55){
+          bubbles.push({
+            x:d.x+rnd(-8,8),
+            y:d.y+rnd(-6,6),
+            r:rnd(4,10),
+            life:90+rnd(0,50)
+          });
+        }
+        // Брызги в стороны
+        d.vx=rnd(-2.4,2.4);
+        d.vy=rnd(-2.2,-0.6);
+        d.drip=true;
+        continue;
+      }
+      if(d.y>206){
+        drops.splice(i,1);
+        continue;
+      }
+      bg2.fillStyle=d.drip?'rgba(186,230,253,.9)':'rgba(56,189,248,.88)';
+      bg2.beginPath();bg2.arc(d.x,d.y,d.r,0,7);bg2.fill();
+    }
+
+    // Мыльная пена и пузырьки на свинке
+    for(var j=bubbles.length-1;j>=0;j--){
+      var b=bubbles[j];
+      b.life--;
+      b.y-=0.12;
+      if(b.life<=0){bubbles.splice(j,1);continue}
+      bg2.save();
+      bg2.globalAlpha=Math.min(0.92,b.life/35);
+      bg2.fillStyle='rgba(255,255,255,.85)';
+      bg2.strokeStyle='rgba(125,211,252,.9)';
+      bg2.lineWidth=1.1;
+      bg2.beginPath();bg2.arc(b.x,b.y,b.r,0,7);bg2.fill();bg2.stroke();
+      bg2.fillStyle='#fff';
+      bg2.beginPath();bg2.arc(b.x-b.r*.32,b.y-b.r*.32,b.r*.28,0,7);bg2.fill();
+      bg2.restore();
+    }
+
+    // Передний бортик ванночки
+    var tubG=bg2.createLinearGradient(0,192,0,252);
+    tubG.addColorStop(0,'#f8fafc');tubG.addColorStop(1,'#bae6fd');
+    bg2.fillStyle=tubG;bg2.strokeStyle='#0284c7';bg2.lineWidth=2.5;
+    bg2.beginPath();
+    bg2.ellipse(190,194,148,36,0,0,Math.PI);
+    bg2.quadraticCurveTo(315,254,190,254);
+    bg2.quadraticCurveTo(65,254,42,194);
+    bg2.closePath();
+    bg2.fill();bg2.stroke();
+
+    // Душевая лейка
+    bg2.save();
+    bg2.translate(sx,sy);
+    bg2.rotate(-0.45);
+    bg2.fillStyle='#94a3b8';bg2.strokeStyle='#334155';bg2.lineWidth=1.6;
+    bg2.fillRect(0,-4,34,8);bg2.strokeRect(0,-4,34,8);
+    bg2.fillStyle='#38bdf8';
+    bg2.beginPath();bg2.ellipse(-6,0,12,7,0,0,7);bg2.fill();bg2.stroke();
+    bg2.restore();
+
+    if($('bclt'))$('bclt').textContent=Math.round(clean)+'%';
+    if($('bclf'))$('bclf').style.width=Math.round(clean)+'%';
+    if($('bwtt'))$('bwtt').textContent=Math.round(wetness*100)+'%';
+    if($('bwtf'))$('bwtf').style.width=Math.round(wetness*100)+'%';
+    saveCare();
+
+    bathRaf=requestAnimationFrame(bathLoop);
+  }
+  bathRaf=requestAnimationFrame(bathLoop);
+}
+
 var FOODS=[
   {id:'cuke',n:'🥒 Огурец',p:50,h:25,c:-4},
   {id:'carrot',n:'🥕 Сочная морковка',p:100,h:45,c:-6},
@@ -1663,9 +1917,7 @@ function careShopScreen(){
     var cost=isAdmin?0:60;
     if(bests[diff]<cost){if($('cm'))$('cm').textContent='Не хватает очков в режиме «'+LV[diff].n+'»';return;}
     if(!isAdmin){bests[diff]-=cost;save()}
-    clean=100;joyTimer=80;lastCareTick=Date.now();saveCare();sfxWin();
-    if($('abar'))$('abar').classList.remove('show');
-    careShopScreen();
+    bathScreen();
   };
   if($('ntf'))$('ntf').onclick=async function(){
     var res=await askNotifyPerm();
@@ -1878,12 +2130,10 @@ function view3D(initKey){
     var cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
     var items=[];
 
-    // Тень под свинкой
     var shP=proj(0,48,0,cy,sy,cp,sp);
     g3.fillStyle='rgba(0,0,0,.38)';
     g3.beginPath();g3.ellipse(shP.x,shP.y,78*shP.s,22*shP.s,0,0,7);g3.fill();
 
-    // Сегменты туловища и головы (3D сферы вдоль оси X)
     var segs=[
       {x:-46,y:2,z:0,rx:32,ry:30,rz:30,c:P.a2},
       {x:-24,y:0,z:0,rx:36,ry:34,rz:34,c:P.a1},
@@ -1902,7 +2152,6 @@ function view3D(initKey){
       }});
     });
 
-    // Белое/светлое пузо снизу (видно когда крутишь свинку снизу!)
     [-22,0,22].forEach(function(bx){
       var bp=proj(bx,24,0,cy,sy,cp,sp);
       items.push({z:bp.z-2,fn:function(){
@@ -1919,7 +2168,6 @@ function view3D(initKey){
       }});
     });
 
-    // 4 лапки
     [[-34,28,-18],[-34,28,18],[28,28,-18],[28,28,18]].forEach(function(lp){
       var p=proj(lp[0],lp[1],lp[2],cy,sy,cp,sp);
       items.push({z:p.z,fn:function(){
@@ -1930,7 +2178,6 @@ function view3D(initKey){
       }});
     });
 
-    // Ушки (левое и правое)
     [[42,-24,-22],[42,-24,22]].forEach(function(ep){
       var p=proj(ep[0],ep[1],ep[2],cy,sy,cp,sp);
       items.push({z:p.z,fn:function(){
@@ -1941,7 +2188,6 @@ function view3D(initKey){
       }});
     });
 
-    // Глазки (левый и правый)
     [[64,-9,-14],[64,-9,14]].forEach(function(ey){
       var p=proj(ey[0],ey[1],ey[2],cy,sy,cp,sp);
       items.push({z:p.z-1,fn:function(){
@@ -1952,14 +2198,12 @@ function view3D(initKey){
       }});
     });
 
-    // Носик
     var np=proj(83,1,0,cy,sy,cp,sp);
     items.push({z:np.z-1,fn:function(){
       g3.fillStyle=P.oreo?'#18181b':(P.cali?'#383435':(P.ufo?'#15803d':'#f472b6'));
       g3.beginPath();g3.ellipse(np.x,np.y,5*np.s,4*np.s,0,0,7);g3.fill();
     }});
 
-    // Корона для Королевской
     if(P.crown){
       var cr=proj(46,-34,0,cy,sy,cp,sp);
       items.push({z:cr.z-2,fn:function(){
@@ -1976,7 +2220,6 @@ function view3D(initKey){
       }});
     }
 
-    // Тарелка НЛО для Инопланетянина
     if(P.ufo){
       var uf=proj(4,34,0,cy,sy,cp,sp);
       items.push({z:uf.z+3,fn:function(){
@@ -1985,7 +2228,6 @@ function view3D(initKey){
       }});
     }
 
-    // Пушистый хохолок для Орео
     if(P.oreo){
       var flP=proj(38,-31,0,cy,sy,cp,sp);
       items.push({z:flP.z-1,fn:function(){
@@ -2144,7 +2386,7 @@ async function adminPanel(){
     setAm('Сняты все галочки скинов и VIP',true);
   };
   if($('afullc'))$('afullc').onclick=function(){
-    hunger=100;clean=100;lastCareTick=Date.now();saveCare();
+    hunger=100;clean=100;wetness=0;bathCap=false;lastCareTick=Date.now();saveCare();
     if($('abar'))$('abar').classList.remove('show');
     setAm('Сытость и чистота восстановлены до 100%',true);
   };
