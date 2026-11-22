@@ -40,6 +40,8 @@ canvas{display:block;width:100%;height:auto}
 .mbtn{left:10px}
 .fsbtn{right:10px;font-size:16px}
 .fsbtn.on{border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,.45)}
+.helibtn{position:absolute;right:12px;bottom:52px;z-index:5;display:none;width:auto;margin:0;padding:7px 12px;border-radius:999px;background:linear-gradient(90deg,#ea580c,#eab308);color:#fff;border:1px solid #fef08a;font-size:12px;font-weight:800;box-shadow:0 4px 14px rgba(234,88,12,.5)}
+.helibtn.show{display:inline-flex;align-items:center;gap:4px}
 .menu-slot,.over-slot{display:none;margin-top:12px}
 .menu-slot.show,.over-slot.show{display:block}
 .menu-slot .box,.over-slot .box{margin:0 auto;max-width:100%;text-align:center}
@@ -107,6 +109,7 @@ li.me{color:var(--ac);font-weight:600}
 <div class="stage" id="st">
 <canvas id="c" width="640" height="390"></canvas>
 <div class="hud"><span id="sc">0</span><span id="bs"></span></div>
+<button type="button" class="helibtn" id="hb" title="Купить вертолёт">🚁 Вертолёт · 5000</button>
 <button type="button" class="mbtn" id="mb" title="Музыка и звуки">🔊</button>
 <button type="button" class="fsbtn" id="fsb" title="На весь экран">⛶</button>
 </div>
@@ -391,6 +394,8 @@ function sfxJump(hi){tone(mode67?190:(modeGta?310:(modeBee?350:(hi?330:270))),.1
 function sfxMog(){tone(640,.14,'sine',.13,210);setTimeout(function(){tone(150,.18,'triangle',.11,70)},70)}
 function sfxHit(){tone(200,.26,'sawtooth',.12,65)}
 function sfxShieldBreak(){tone(480,.22,'sawtooth',.13,130)}
+function sfxHeliStart(){tone(160,.25,'sawtooth',.11,420);setTimeout(function(){tone(240,.2,'triangle',.1,560)},110)}
+function sfxHeliBoom(){tone(140,.55,'sawtooth',.18,32);setTimeout(function(){tone(90,.6,'square',.14,26)},90)}
 function sfxTreat(t){
   if(t===0){tone(587.33,.1,'sine',.1,880)}
   else if(t===1){tone(523.25,.09,'triangle',.11);setTimeout(function(){tone(783.99,.14,'triangle',.11)},65)}
@@ -587,9 +592,42 @@ function owned(k){if(!SK[k])return false;if(SK[k].free)return true;var g=myGR();
 function curSkin(){if(modeGta)return'gta6';return owned(skin)?skin:'classic'}
 
 var px=100,py=GY,vy=0,air=false,paused=false,ph=0,obs=[],treats=[],pops=[],parts=[],spd=5,dist=0,bonus=0,score=0,cd=0,tcd=180,hiJump=0,shield=0,joyTimer=0,scared=false,banner=0,mogFlash=0,t0=0,clouds=[],pigeons=[],tufts=[],L=LV[2];
+var heliActive=false,heliRentTimer=0,heliFarmAcc=0,heliRotor=0,doomPhase=0,doomTimer=0,doomRed=0,doomBlack=0;
+
 for(var i=0;i<5;i++)clouds.push({x:rnd(0,W),y:rnd(25,130),s:rnd(.6,1.2)});
 for(var i=0;i<7;i++)pigeons.push({x:rnd(0,W),y:rnd(32,148),s:rnd(.62,1.05),sp:rnd(.65,1.35),ph:rnd(0,6.28),col:Math.random()<.65?'#94a3b8':'#cbd5e1'});
 for(var i=0;i<45;i++)tufts.push({x:rnd(0,W),y:rnd(GY+5,H-6)});
+
+function syncHeliBtn(){
+  if(!$('hb'))return;
+  var freeStart=!!isAdmin;
+  var canBuy=(state==='play'&&!paused&&!heliActive&&doomPhase===0&&(freeStart||score>=5000));
+  $('hb').textContent=freeStart?'🚁 Вертолёт · БЕСПЛАТНО (АДМИН)':'🚁 Вертолёт · 5000';
+  $('hb').classList.toggle('show',canBuy);
+}
+
+function buyHelicopter(){
+  var freeStart=!!isAdmin;
+  if(state!=='play'||paused||heliActive||doomPhase!==0||(!freeStart&&score<5000))return;
+  if(!freeStart){
+    bonus-=5000;
+    score=Math.max(0,Math.floor(dist/10)+bonus);
+  }
+  heliActive=true;
+  heliRentTimer=120;
+  heliFarmAcc=0;
+  air=true;vy=0;
+  sfxHeliStart();
+  addBurst(px,py-45,'#facc15',22);
+  pops.push({x:px+15,y:py-88,tx:freeStart?'🚁 СТАРТ (АДМИН)!':'🚁 -5000 (ФАРМ!)',c:'#facc15',l:55});
+  syncHeliBtn();
+  hud();
+}
+
+if($('hb')){
+  $('hb').addEventListener('pointerdown',function(e){e.stopPropagation()});
+  $('hb').onclick=function(e){e.stopPropagation();buyHelicopter()};
+}
 
 function syncModesUI(){
   if($('sb67'))$('sb67').classList.toggle('on',mode67);
@@ -659,13 +697,14 @@ if($('mgb')){
   };
 }
 
-function jump(){if(state==='play'&&!paused&&!air){var sup=hiJump>0;vy=sup?-16.2:-13.2;air=true;sfxJump(sup)}}
+function jump(){if(state==='play'&&!paused&&doomPhase===0&&!heliActive&&!air){var sup=hiJump>0;vy=sup?-16.2:-13.2;air=true;sfxJump(sup)}}
 function start(){
   hideMenuSlot();hideOverSlot();closeModalOv();
   initAudio();L=LV[diff]||LV[2];obs=[];treats=[];pops=[];parts=[];
   spd=L.s0;dist=0;bonus=0;score=0;py=GY;vy=0;air=false;paused=false;
   cd=90;tcd=150;hiJump=0;shield=0;joyTimer=0;scared=false;banner=0;mogFlash=0;
-  mStep=0;mTimer=0;state='play';syncModesUI();
+  heliActive=false;heliRentTimer=0;heliFarmAcc=0;heliRotor=0;doomPhase=0;doomTimer=0;doomRed=0;doomBlack=0;
+  mStep=0;mTimer=0;state='play';syncModesUI();syncHeliBtn();
   t0=performance.now();requestAnimationFrame(loop);
 }
 function mkObs(x){var k=Math.floor(rnd(0,3)),w=rnd(30,44),h=k===1?rnd(30,40):rnd(34,L.hm);return{x:x,w:w,h:h,k:k,sink:0,sunk:false}}
@@ -787,7 +826,29 @@ function leg(x,y,a,P){
 }
 function star(x,y,s){var p=[[0,-1],[.28,-.28],[1,0],[.28,.28],[0,1],[-.28,.28],[-1,0],[-.28,-.28]];ctx.beginPath();p.forEach(function(q,i){var X=x+q[0]*s,Y=y+q[1]*s;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.closePath();ctx.fill()}
 
+function drawHelicopter(cx,cy){
+  ctx.save();ctx.translate(cx,cy);
+  var bladeW=Math.max(6,Math.abs(Math.cos(heliRotor))*48);
+  ctx.fillStyle='#334155';ctx.strokeStyle='#0f172a';ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(-42,4);ctx.lineTo(-96,-6);ctx.lineTo(-96,2);ctx.lineTo(-42,12);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle='#ef4444';ctx.fillRect(-100,-12,6,18);
+  ctx.strokeStyle='#f8fafc';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(-97,-14+Math.sin(heliRotor*2)*5);ctx.lineTo(-97,8-Math.sin(heliRotor*2)*5);ctx.stroke();
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=2.4;
+  ctx.beginPath();ctx.moveTo(-26,24);ctx.lineTo(34,24);ctx.moveTo(-14,14);ctx.lineTo(-18,24);ctx.moveTo(16,14);ctx.lineTo(20,24);ctx.stroke();
+  var cg=ctx.createLinearGradient(0,-16,0,18);
+  cg.addColorStop(0,'#f97316');cg.addColorStop(1,'#9a3412');
+  ctx.fillStyle=cg;ctx.beginPath();ctx.ellipse(0,2,44,16,0,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle='rgba(125,211,252,.65)';
+  ctx.beginPath();ctx.ellipse(22,0,15,10,0,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#cbd5e1';ctx.fillRect(-3,-24,6,10);
+  ctx.fillStyle='rgba(248,250,252,.85)';
+  ctx.fillRect(-bladeW,-26,bladeW*2,3.5);
+  ctx.restore();
+}
+
 function drawPig(){
+  if(doomPhase===2)return;
   var k=curSkin(),P=SK[k]||SK.classic;ctx.save();
   if(modeMog){
     ctx.fillStyle='rgba(56,189,248,.24)';
@@ -809,12 +870,15 @@ function drawPig(){
     ctx.beginPath();ctx.ellipse(px-14,py-34,76,44,0,0,7);ctx.fill();
   }
   ctx.fillStyle=modeMog?'rgba(56,189,248,.3)':(modeBee?'rgba(180,83,9,.28)':(mode67?'rgba(34,211,238,.28)':(modeGta||k==='gta6'?'rgba(255,158,0,.3)':'rgba(0,0,0,.2)')));
-  var sh=Math.max(.4,1-(GY-py)/160);ctx.beginPath();ctx.ellipse(px,GY+3,52*sh,6*sh,0,0,7);ctx.fill();
+  var sh=Math.max(.35,1-(GY-py)/180);ctx.beginPath();ctx.ellipse(px,GY+3,52*sh,6*sh,0,0,7);ctx.fill();
   var tremble=scared?Math.sin(performance.now()/28)*1.8:0;
-  var hoverY=(k==='alien'?Math.sin(performance.now()/180)*4-5:0)+tremble;
-  ctx.translate(px,py+hoverY);ctx.rotate(air?Math.max(-.25,Math.min(.25,vy/50)):Math.sin(ph*2)*.015);ctx.scale(.85,.85);
+  var hoverY=(heliActive?Math.sin(performance.now()/140)*5-8:(k==='alien'?Math.sin(performance.now()/180)*4-5:0))+tremble;
+  ctx.translate(px,py+hoverY);ctx.rotate(heliActive?-.04:(air?Math.max(-.25,Math.min(.25,vy/50)):Math.sin(ph*2)*.015));ctx.scale(.85,.85);
   var spr=getSpr(k,modeBee);
-  if(k==='alien'){
+  if(heliActive){
+    drawHelicopter(-6,-52);
+    if(spr)ctx.drawImage(spr,-70,-92);
+  }else if(k==='alien'){
     if(spr)ctx.drawImage(spr,-70,-106);
   }else{
     var a=air?.7:Math.sin(ph)*.7,b=air?-.7:Math.sin(ph+3.1)*.7;
@@ -853,7 +917,7 @@ function drawPig(){
       ctx.beginPath();ctx.moveTo(54,-51);ctx.lineTo(135,-36);ctx.stroke();
     }
   }
-  if(scared&&k!=='alien'&&(!(P.viceOutfit&&!mode67)||modeBee)){
+  if(scared&&k!=='alien'&&(!(P.viceOutfit&&!mode67)||modeBee)&&!heliActive){
     ctx.fillStyle='#ffffff';
     ctx.beginPath();ctx.arc(46,-51,6.2,0,7);ctx.fill();
     ctx.strokeStyle='#18181b';ctx.lineWidth=1.2;ctx.stroke();
@@ -1148,6 +1212,11 @@ function drawEffects(){
   ctx.globalAlpha=1;ctx.textAlign='left';
   var bx=12,by=34;
   ctx.font='bold 12px system-ui,sans-serif';
+  if(heliActive){
+    ctx.fillStyle='rgba(220,38,38,.92)';ctx.fillRect(bx,by,166,18);
+    ctx.fillStyle='#fff';ctx.fillText('🚁 -2000 через '+(heliRentTimer/60).toFixed(1)+'с',bx+6,by+13);
+    by+=22;
+  }
   if(hiJump>0){
     ctx.fillStyle='rgba(234,88,12,.9)';ctx.fillRect(bx,by,118,18);
     ctx.fillStyle='#fff';ctx.fillText('🥕 Супер-прыжок '+(hiJump/60).toFixed(1)+'с',bx+6,by+13);
@@ -1168,6 +1237,40 @@ function drawEffects(){
     }
     ctx.textAlign='left';
   }
+  if(doomPhase>0){
+    if(doomRed>0){
+      ctx.fillStyle='rgba(220,20,20,'+doomRed.toFixed(3)+')';
+      ctx.fillRect(0,0,W,H);
+    }
+    if(doomBlack>0){
+      ctx.fillStyle='rgba(0,0,0,'+doomBlack.toFixed(3)+')';
+      ctx.fillRect(0,0,W,H);
+    }
+    if(doomPhase===2){
+      ctx.save();
+      ctx.fillStyle='#ef4444';
+      ctx.shadowColor='#dc2626';
+      ctx.shadowBlur=18;
+      ctx.font='900 34px system-ui,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText('МОЛОДЕЦ..',W/2,H/2+10);
+      ctx.restore();
+    }
+  }
+}
+
+function triggerHeliDoom(){
+  heliActive=false;
+  doomPhase=1;
+  doomTimer=0;
+  doomRed=0.82;
+  doomBlack=0;
+  sfxHeliBoom();
+  addBurst(px,py-52,'#ef4444',28);
+  addBurst(px,py-52,'#f97316',24);
+  addBurst(px,py-52,'#facc15',20);
+  pops.push({x:px,y:py-80,tx:'БУМ! НЕУПЛАТА!',c:'#ef4444',l:55});
+  syncHeliBtn();
 }
 
 function hud(){
@@ -1180,9 +1283,30 @@ function loop(now){
   var dt=Math.min(2,(now-t0)/16.67);t0=now;
   if(mogFlash>0)mogFlash=Math.max(0,mogFlash-dt);
 
+  if(doomPhase>0){
+    doomTimer+=dt;
+    for(var pi=parts.length-1;pi>=0;pi--){var pt=parts[pi];pt.x+=pt.vx*dt;pt.y+=pt.vy*dt;pt.vy+=.12*dt;pt.l-=dt;if(pt.l<=0)parts.splice(pi,1)}
+    for(var qi=pops.length-1;qi>=0;qi--){var po=pops[qi];po.y-=1.1*dt;po.l-=dt;if(po.l<=0)pops.splice(qi,1)}
+    if(doomTimer<28){
+      doomRed=Math.max(0.25,0.82-(doomTimer/28)*0.55);
+      doomBlack=Math.min(0.65,(doomTimer/28)*0.65);
+    }else{
+      doomPhase=2;
+      doomRed=0;
+      doomBlack=Math.min(1,0.65+((doomTimer-28)/24)*0.35);
+    }
+    bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
+    if(doomTimer>=125){
+      doomPhase=0;
+      return over(true);
+    }
+    requestAnimationFrame(loop);
+    return;
+  }
+
   var curSpd=L.s0+Math.min(L.sm-L.s0,dist/L.rp);
   var stoppingForMog=false;
-  if(modeMog){
+  if(modeMog&&!heliActive){
     var nearObs=null;
     for(var k=0;k<obs.length;k++){
       var cand=obs[k];
@@ -1205,7 +1329,33 @@ function loop(now){
 
   spd=curSpd;
   dist+=spd*dt;
-  score=Math.floor(dist/10)+bonus;
+
+  if(heliActive){
+    heliRotor+=.85*dt;
+    py+=(GY-98-py)*0.12*dt;
+    heliFarmAcc+=(35/60)*dt;
+    if(heliFarmAcc>=1){var addF=Math.floor(heliFarmAcc);bonus+=addF;heliFarmAcc-=addF}
+    heliRentTimer-=dt;
+    if(heliRentTimer<=0){
+      var curSc=Math.max(0,Math.floor(dist/10)+bonus);
+      if(curSc<2000){
+        bonus=-Math.floor(dist/10);
+        score=0;
+        hud();
+        triggerHeliDoom();
+        requestAnimationFrame(loop);
+        return;
+      }
+      bonus-=2000;
+      heliRentTimer=120;
+      sfxHit();
+      pops.push({x:px+10,y:py-95,tx:'-2000 ОЧКОВ!',c:'#ef4444',l:50});
+    }
+  }else{
+    vy+=.72*dt;py+=vy*dt;if(py>=GY){py=GY;vy=0;air=false}
+  }
+
+  score=Math.max(0,Math.floor(dist/10)+bonus);
   if(!stoppingForMog)ph+=.28*dt*(Math.max(1,spd)/5);
   if(hiJump>0)hiJump=Math.max(0,hiJump-dt);
   if(shield>0)shield=Math.max(0,shield-dt);
@@ -1223,7 +1373,6 @@ function loop(now){
     mStep++;
     mTimer=mode67?8.5:Math.max(6.5,12.5-spd*.35);
   }
-  vy+=.72*dt;py+=vy*dt;if(py>=GY){py=GY;vy=0;air=false}
   cd-=dt;if(cd<=0){var ex=spawn();cd=(rnd(L.g0,L.g1)+ex)/Math.max(2.5,L.s0)}
   tcd-=dt;if(tcd<=0){spawnTreat();tcd=rnd(240,420)}
   clouds.forEach(function(c){c.x-=(modeGta?spd*.4:.3)*dt;if(c.x<-80)c.x=W+60});
@@ -1243,7 +1392,7 @@ function loop(now){
       if(tr.tp===0){bonus+=50;addBurst(tr.x,tr.y,'#4ade80',12);pops.push({x:tr.x,y:tr.y-10,tx:modeBee?'🍯 +50':(modeGta?'RESPECT +50':'+50 🥒'),c:modeBee?'#92400e':(modeGta?'#fde047':'#15803d'),l:45})}
       else if(tr.tp===1){bonus+=100;hiJump=300;addBurst(tr.x,tr.y,'#fb923c',15);pops.push({x:tr.x,y:tr.y-10,tx:modeBee?'🐝 +100 ПОЛЁТ!':(modeGta?'NITRO +100!':'+100 ПРЫЖОК!'),c:'#ea580c',l:45})}
       else{bonus+=200;shield=360;addBurst(tr.x,tr.y,'#facc15',18);pops.push({x:tr.x,y:tr.y-10,tx:modeGta?'ARMOR +200!':'+200 ЩИТ!',c:'#ca8a04',l:45})}
-      score=Math.floor(dist/10)+bonus;
+      score=Math.max(0,Math.floor(dist/10)+bonus);
       treats.splice(ti,1);
     }
   }
@@ -1262,8 +1411,8 @@ function loop(now){
     }
     o.x-=spd*dt;
     if(o.x<-60){obs.splice(i,1);continue}
-    if(!modeMog&&o.x>px&&o.x-px<155&&shield<=0)scared=true;
-    if(px+38>o.x+7&&px-38<o.x+o.w-7&&py>GY-o.h+8){
+    if(!heliActive&&!modeMog&&o.x>px&&o.x-px<155&&shield<=0)scared=true;
+    if(!heliActive&&px+38>o.x+7&&px-38<o.x+o.w-7&&py>GY-o.h+8){
       if(modeMog){
         o.sunk=true;mogFlash=14;sfxMog();
         addBurst(o.x+o.w/2,GY-8,'#ef4444',16);
@@ -1277,21 +1426,24 @@ function loop(now){
         obs.splice(i,1);
         continue;
       }
-      return over();
+      return over(false);
     }
   }
-  if(!scared&&modeGta&&Math.min(6,1+Math.floor(score/250))>=5&&Math.floor(now/450)%2===0)scared=true;
+  if(!scared&&!heliActive&&modeGta&&Math.min(6,1+Math.floor(score/250))>=5&&Math.floor(now/450)%2===0)scared=true;
   bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
   if(banner>0){banner-=dt;ctx.fillStyle='#b8860b';ctx.font='bold 22px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('Золотая свинка открыта!',W/2,95);ctx.textAlign='left'}
+  syncHeliBtn();
   hud();requestAnimationFrame(loop);
 }
 
 function ownedMap(){var m={};Object.keys(SK).forEach(function(k){m[k]=owned(k)});return m}
-function over(){
-  sfxHit();state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
+function over(fromHeliBoom){
+  heliActive=false;syncHeliBtn();
+  if(!fromHeliBoom)sfxHit();
+  state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
   var nb=score>bests[diff];if(nb){bests[diff]=score;save()}hud();
   var nw=Object.keys(SK).filter(function(k){return owned(k)&&!before[k]}).map(function(k){return SK[k].n});
-  showOverSlot('<div class="box"><h2>'+(modeGta?'ПОТРАЧЕНО':'Игра окончена')+'</h2><p>'+LV[diff].n+': '+score+' очков'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+nw.join(', ')+'. Загляни в магазин!</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">Ещё раз</button><div class="lr"><button class="sec" id="lv">Сложность</button><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button></div></div>');
+  showOverSlot('<div class="box"><h2>'+(fromHeliBoom?'МОЛОДЕЦ..':(modeGta?'ПОТРАЧЕНО':'Игра окончена'))+'</h2><p>'+LV[diff].n+': '+score+' очков'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+nw.join(', ')+'. Загляни в магазин!</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">Ещё раз</button><div class="lr"><button class="sec" id="lv">Сложность</button><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button></div></div>');
   if($('go'))$('go').onclick=start;
   if($('lv'))$('lv').onclick=function(){hideOverSlot();ready()};
   if($('shp'))$('shp').onclick=function(){hideOverSlot();shop()};
@@ -1435,7 +1587,8 @@ function passSettingsScreen(){
 }
 
 function nickScreen(){
-  state='nick';score=0;hud();bg();drawPig();
+  hideOverSlot();
+  state='nick';score=0;syncHeliBtn();hud();bg();drawPig();
   ov('<div class="box"><h2>Введи свой ник</h2><p>3–12 символов: латиница, цифры, _</p><input type="text" id="ni" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Например, Piggy_77"><div class="msg" id="em"></div><button id="nb">Играть</button></div>');
   var i=$('ni');if(i&&nick)i.value=nick;
   if($('nb'))$('nb').onclick=async function(){
@@ -1470,7 +1623,8 @@ function nickScreen(){
 }
 
 function ready(){
-  state='ready';score=0;stepCare();hud();bg();drawPig();
+  hideOverSlot();
+  state='ready';score=0;syncHeliBtn();stepCare();hud();bg();drawPig();
   var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
   [1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
   html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
@@ -1665,7 +1819,7 @@ async function loadLb(){
   document.querySelectorAll('#tb button').forEach(function(b){b.className=(+b.dataset.t===lbTab)?'on':''});
 }
 document.querySelectorAll('#tb button').forEach(function(b){b.onclick=function(){lbTab=+b.dataset.t;loadLb()}});
-document.addEventListener('keydown',function(e){if(e.target&&e.target.tagName==='INPUT')return;if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}});
+document.addEventListener('keydown',function(e){if(e.target&&e.target.tagName==='INPUT')return;if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}else if(e.code==='KeyH'){e.preventDefault();buyHelicopter()}});
 document.addEventListener('pointerdown',function(e){if(state==='play'&&!(e.target&&e.target.closest&&e.target.closest('button,input')))jump()});
 
 try{bg();drawPig()}catch(e){}
@@ -1689,7 +1843,7 @@ if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
         loadLocal(nick);if(state==='ready')ready();
       }
     }
-    await loadGr();syncModesUI();stepCare();
+    await loadGr();syncModesUI();syncHeliBtn();stepCare();
     if(state==='ready')ready();
   }catch(e){}
 })();
