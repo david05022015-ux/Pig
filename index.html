@@ -121,8 +121,8 @@ lbTab=diff;
 /* Уведомления «покорми свинку» */
 function sendFeedNotification(msg){
 var text=msg||'Покорми свинку';
-$('atxt').textContent=text;
-$('abar').classList.add('show');
+if($('atxt'))$('atxt').textContent=text;
+if($('abar'))$('abar').classList.add('show');
 var now=Date.now();
 if(now-lastNotif<25000)return;
 lastNotif=now;
@@ -137,7 +137,7 @@ if(!('Notification' in window))return 'unsupported';
 if(Notification.permission==='granted')return 'granted';
 try{return await Notification.requestPermission()}catch(e){return 'denied'}
 }
-$('afix').onclick=function(){careShopScreen()};
+if($('afix'))$('afix').onclick=function(){careShopScreen()};
 
 function saveCareState(){
 try{
@@ -157,7 +157,7 @@ clean=Math.max(0,clean-elSec*1.1);
 }
 if(hunger<=35){
 sendFeedNotification(hunger<=12?'Срочно покорми свинку, она умирает от голода!':'Покорми свинку');
-}else{
+}else if($('abar')){
 $('abar').classList.remove('show');
 }
 saveCareState();
@@ -659,7 +659,6 @@ ctx.strokeStyle='#facc15';ctx.lineWidth=3.5;
 ctx.beginPath();ctx.arc(38,-35,16,.2,2.7);ctx.stroke();
 ctx.fillStyle='#facc15';ctx.font='bold 10px system-ui,sans-serif';ctx.fillText('67',33,-16);
 }
-/* Запах и мухи, если свинка грязная */
 if(clean<45&&k!=='alien'){
 var stinkA=Math.min(.75,(45-clean)/60);
 ctx.strokeStyle='rgba(132,204,22,'+stinkA.toFixed(2)+')';ctx.lineWidth=2;ctx.lineCap='round';
@@ -1013,22 +1012,22 @@ var FOODS=[
 function careShopScreen(){
 dismissSplash();state='care';tickCare();
 var hCol=hunger>40?'#22c55e':(hunger>18?'#f59e0b':'#ef4444');
-var cCol=clean>45?'#38bdf8':(clean>20?'#f59e0b':'#84cc16');
+var clColor=clean>45?'#38bdf8':(clean>20?'#f59e0b':'#84cc16');
 var statusTxt=clean<20?'Свинка жутко воняет, вокруг роятся мухи!':(clean<45?'Свинка пачкается, пора искупать!':(hunger<25?'Свинка голодная — срочно покорми!':'Свинка в норме');
-var h='<div class="box"><h2>Еда и уход</h2><p>Рекорд (ср.): '+bests[2]+' · '+statusTxt+'</p>';
-h+='<div class="stbar">';
-h+='<div class="strow"><div class="sthead"><span>🍖 Сытость</span><span>'+Math.round(hunger)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(hunger)+'%;background:'+hCol+'"></div></div></div>';
-h+='<div class="strow"><div class="sthead"><span>🛁 Чистота</span><span>'+Math.round(clean)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(clean)+'%;background:'+cCol+'"></div></div></div>';
-h+='</div>';
+var html='<div class="box"><h2>Еда и уход</h2><p>Рекорд ('+LV[diff].n+'): '+bests[diff]+' · '+statusTxt+'</p>';
+html+='<div class="stbar">';
+html+='<div class="strow"><div class="sthead"><span>🍖 Сытость</span><span>'+Math.round(hunger)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(hunger)+'%;background:'+hCol+'"></div></div></div>';
+html+='<div class="strow"><div class="sthead"><span>🛁 Чистота</span><span>'+Math.round(clean)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(clean)+'%;background:'+clColor+'"></div></div></div>';
+html+='</div>';
 FOODS.forEach(function(f){
 var cost=isAdmin?0:f.p;
-h+='<button class="dbtn" data-f="'+f.id+'"><span>'+f.n+' <small>+'+f.h+' сытости</small></span><small>'+(cost===0?'БЕСПЛАТНО':cost+' очк.')+'</small></button>';
+html+='<button class="dbtn" data-f="'+f.id+'"><span>'+f.n+' <small>+'+f.h+' сытости</small></span><small>'+(cost===0?'БЕСПЛАТНО':cost+' очк.')+'</small></button>';
 });
 var washCost=isAdmin?0:60;
-h+='<button id="wsh">🛁 Искупать свинку ('+(washCost===0?'БЕСПЛАТНО':washCost+' очк.')+')</button>';
-h+='<button class="sec" id="ntf">🔔 Включить уведомления «Покорми свинку»</button>';
-h+='<div class="msg" id="cm"></div><button class="sec" id="cbk">Назад</button></div>';
-ov(h);
+html+='<button id="wsh">🛁 Искупать свинку ('+(washCost===0?'БЕСПЛАТНО':washCost+' очк.')+')</button>';
+html+='<button class="sec" id="ntf">🔔 Включить уведомления «Покорми свинку»</button>';
+html+='<div class="msg" id="cm"></div><button class="sec" id="cbk">Назад</button></div>';
+ov(html);
 document.querySelectorAll('[data-f]').forEach(function(b){
 b.onclick=function(){
 var it=FOODS.find(function(x){return x.id===b.dataset.f});
@@ -1046,7 +1045,7 @@ var cost=isAdmin?0:60;
 if(bests[diff]<cost){$('cm').textContent='Не хватает очков в режиме «'+LV[diff].n+'»';return}
 if(!isAdmin){bests[diff]-=cost;save()}
 clean=100;joyTimer=80;lastTick=Date.now();saveCareState();sfxWin();
-$('abar').classList.remove('show');
+if($('abar'))$('abar').classList.remove('show');
 careShopScreen();
 };
 $('ntf').onclick=async function(){
@@ -1058,7 +1057,7 @@ else{$('cm').textContent='Разрешение на уведомления не 
 $('cbk').onclick=function(){ready()};
 }
 
-function ov(h){var o=$('ov');o.innerHTML=h;o.style.display='block';o.scrollTop=0}
+function ov(htmlStr){var o=$('ov');o.innerHTML=htmlStr;o.style.display='block';o.scrollTop=0}
 function ok(n){return /^[A-Za-z0-9_]{3,12}$/.test(n)}
 function setRec(d){bests={1:d.b1||0,2:d.b2||d.best||0,3:d.b3||0};gold=d.gold===true;if(d.pass)accPass=d.pass}
 function hasAccess(d){
@@ -1162,31 +1161,31 @@ catch(e){m.textContent='Не удалось проверить ник, попр�
 nick=n;try{localStorage.setItem('gp_nick',n)}catch(e){}await loadGr();ready()}}
 
 function ready(){state='ready';score=0;syncHeliBtn();tickCare();hud();bg();drawPig();drawSplash();
-var h='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
-[1,2,3].forEach(function(k){h+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
-h+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
-if(online)h+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
-h+='</div>';ov(h);$('hn').textContent=nick;
+var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
+[1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
+html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
+if(online)html+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
+html+='</div>';ov(html);if($('hn'))$('hn').textContent=nick;
 document.querySelectorAll('.dbtn').forEach(function(b){b.onclick=function(){diff=+b.dataset.d;lbTab=diff;try{localStorage.setItem('gp_diff',diff)}catch(e){}loadLb();ready()}});
 $('go').onclick=start;$('shp').onclick=shop;$('crd').onclick=careShopScreen;$('pwd').onclick=passSettingsScreen;
 $('out').onclick=function(){if(confirm('Выйти из аккаунта '+nick+'?'))logoutAccount()};
-if(isAdmin)$('adm').onclick=adminPanel;
-if(online)$('mid').onclick=function(){$('idl').textContent=uid}}
+if(isAdmin&&$('adm'))$('adm').onclick=adminPanel;
+if($('mid'))$('mid').onclick=function(){$('idl').textContent=uid}}
 
 function shop(){dismissSplash();state='shop';var m=Math.max(bests[1],bests[2],bests[3]);
-var h='<div class="box"><h2>Магазин свинок</h2><p>Твой лучший рекорд: '+m+'</p>';
+var html='<div class="box"><h2>Магазин свинок</h2><p>Твой лучший рекорд: '+m+'</p>';
 Object.keys(SK).forEach(function(k){var o=owned(k);
-h+='<div class="row"><canvas data-k="'+k+'" width="172" height="124"></canvas><div class="in">'+(SK[k].tag?'<span class="lim">'+SK[k].tag+'</span>':'')+'<b>'+SK[k].n+'</b><small>'+SK[k].d+'</small></div><button class="sbtn" data-k="'+k+'"'+(o?'':' disabled')+'>'+(o?(curSkin()===k?'Выбрана':'Выбрать'):'Закрыта')+'</button></div>'});
-h+='<button class="sec" id="bk">Назад</button></div>';ov(h);
+html+='<div class="row"><canvas data-k="'+k+'" width="172" height="124"></canvas><div class="in">'+(SK[k].tag?'<span class="lim">'+SK[k].tag+'</span>':'')+'<b>'+SK[k].n+'</b><small>'+SK[k].d+'</small></div><button class="sbtn" data-k="'+k+'"'+(o?'':' disabled')+'>'+(o?(curSkin()===k?'Выбрана':'Выбрать'):'Закрыта')+'</button></div>'});
+html+='<button class="sec" id="bk">Назад</button></div>';ov(html);
 document.querySelectorAll('.row canvas').forEach(function(c){c.getContext('2d').drawImage(getSpr(c.dataset.k),0,0)});
 document.querySelectorAll('.sbtn').forEach(function(b){b.onclick=function(){skin=b.dataset.k;try{localStorage.setItem('gp_skin',skin)}catch(e){}bg();drawPig();shop()}});
 $('bk').onclick=function(){ready()}}
 
 async function adminPanel(){dismissSplash();state='admin';
-var h='<div class="box"><h2>Админ-панель</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><input type="number" id="apt" placeholder="Очки (например 5000)"><div class="chk">';
-['grey','tux','gold','royal','malysh','alien'].forEach(function(k){h+='<label><input type="checkbox" data-s="'+k+'">'+SK[k].n+'</label>'});
-h+='<label><input type="checkbox" id="avip">VIP-значок в таблице</label></div><div class="msg" id="am"></div><button class="sec" id="al">Загрузить</button><button id="as">Выдать / сохранить</button><button class="sec" id="agp">Начислить очки игроку</button><button class="sec" id="arp">Сбросить пароль игрока</button><button class="red" id="ad">Удалить ник из таблицы</button><button class="red" id="ara">Сбросить всем очки</button><button class="sec" id="bk">Назад</button></div>';
-ov(h);
+var html='<div class="box"><h2>Админ-панель</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><input type="number" id="apt" placeholder="Очки (например 5000)"><div class="chk">';
+['grey','tux','gold','royal','malysh','alien'].forEach(function(k){html+='<label><input type="checkbox" data-s="'+k+'">'+SK[k].n+'</label>'});
+html+='<label><input type="checkbox" id="avip">VIP-значок в таблице</label></div><div class="msg" id="am"></div><button class="sec" id="al">Загрузить</button><button id="as">Выдать / сохранить</button><button class="sec" id="agp">Начислить очки игроку</button><button class="sec" id="arp">Сбросить пароль игрока</button><button class="red" id="ad">Удалить ник из таблицы</button><button class="red" id="ara">Сбросить всем очки</button><button class="sec" id="bk">Назад</button></div>';
+ov(html);
 function key(){var n=$('an').value.trim();if(!ok(n)){$('am').textContent='Введи ник: 3–12 символов, латиница, цифры, _';return null}$('am').textContent='';return n.toLowerCase()}
 $('al').onclick=async function(){var k=key();if(!k)return;try{var d=await fget('grants/'+k)||{};document.querySelectorAll('.chk input[data-s]').forEach(function(c){c.checked=!!(d.skins&&d.skins[c.dataset.s])});$('avip').checked=d.vip===true;$('am').textContent='Загружено'}catch(e){$('am').textContent='Ошибка загрузки'}};
 $('as').onclick=async function(){var k=key();if(!k)return;var o={skins:{},vip:$('avip').checked},any=o.vip;
@@ -1288,6 +1287,7 @@ if(state==='play'&&!e.target.closest('button,input'))jump();
 });
 bg();drawPig();drawSplash();
 (async function(){
+try{
 if(CFG.apiKey&&CFG.databaseURL){try{await auth();online=true}catch(e){online=false}}
 if(online){try{isAdmin=(await fget('admins/'+uid))===true}catch(e){}}
 $('ln').textContent=online?'Ник закрепляется за устройством или паролем: можно играть и с телефона, и с ПК.':'Таблица пока локальная (только на этом устройстве). Подключи Firebase по инструкции в README, и она станет общей.';
@@ -1295,6 +1295,10 @@ loadLb();if(online)setInterval(loadLb,15000);
 if(nick){if(online){try{var d=await fget('scores/'+nick.toLowerCase());if(hasAccess(d))setRec(d);else nick=null}catch(e){}}else loadLocal(nick)}
 await loadGr();syncModesUI();syncHeliBtn();tickCare();
 if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
+}catch(e){
+bg();drawPig();drawSplash();
+if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
+}
 })();
 </script>
 </body>
