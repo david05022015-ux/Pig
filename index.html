@@ -15,6 +15,15 @@ body.gtath-day{--bg:#e0f7fa;--card:#ffffff;--tx:#083344;--mu:#0e7490;--bd:#67e8f
 .w{max-width:820px;margin:0 auto;padding:12px}
 h1{font-size:21px;margin:6px 0 10px;font-weight:700}
 h2{font-size:17px;margin:0 0 8px;font-weight:600}
+.top-abuse-banner{position:sticky;top:0;z-index:30;display:none;align-items:center;justify-content:space-between;gap:8px;padding:9px 14px;background:linear-gradient(90deg,#7f1d1d,#b91c1c,#9333ea);color:#fff;font-weight:800;font-size:13px;border-bottom:2px solid #fde047;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.top-abuse-banner.show{display:flex}
+.top-abuse-banner .tmsg{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top-abuse-banner button{width:auto;margin:0;padding:5px 10px;font-size:11px;border-radius:8px;background:rgba(15,23,42,.75);color:#fde047;border:1px solid rgba(254,240,138,.45)}
+.splash-card{border-radius:16px;border:1.5px solid var(--bd);background:linear-gradient(135deg,rgba(244,114,182,.16),rgba(250,204,21,.16),rgba(56,189,248,.14)),var(--card);padding:16px;margin-bottom:12px;text-align:center}
+.splash-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800;background:var(--ac);color:#fff;margin-bottom:6px}
+.splash-title{font-size:22px;font-weight:900;margin:4px 0}
+.splash-sub{font-size:13px;color:var(--mu);margin:4px 0 12px}
+.splash-cta{max-width:340px;margin:0 auto;font-size:16px;padding:12px 20px;background:linear-gradient(90deg,#ea580c,#ec4899);color:#fff;font-weight:800}
 .stage{position:relative;border-radius:16px;overflow:hidden;border:1.5px solid var(--bd);touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:box-shadow .25s,border-color .25s;background:#09090b}
 .stage.s67{border-color:#a855f7;box-shadow:0 0 20px rgba(168,85,247,.45)}
 .stage.sgta{border-color:#ff4d94;box-shadow:0 0 20px rgba(255,77,148,.5)}
@@ -83,7 +92,7 @@ canvas{display:block;width:100%;min-height:320px;height:auto}
 .alertbar.show{display:flex}
 .alertbar button{width:auto;margin:0;padding:5px 10px;font-size:12px}
 .ov{position:fixed;inset:0;z-index:20;display:none;background:rgba(30,20,10,.6);padding:16px;overflow:auto}
-.box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;width:100%;max-width:410px;text-align:center;margin:20px auto}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;width:100%;max-width:440px;text-align:center;margin:20px auto}
 .box p{margin:6px 0;color:var(--mu);font-size:14px}
 input[type=text],input[type=password],input[type=number]{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);margin:8px 0;text-align:center}
 button{font:inherit;font-weight:600;background:var(--ac);color:#fff;border:0;border-radius:10px;padding:11px 18px;width:100%;cursor:pointer;margin-top:6px}
@@ -91,8 +100,8 @@ button:disabled{opacity:.45;cursor:default}
 .sec{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
 .red{background:var(--er)}
 .lr{display:flex;gap:6px;flex-wrap:wrap}.lr button{flex:1;min-width:72px;padding:9px 6px}
-.adm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:6px}
-.adm-grid button{margin:0;padding:8px 8px;font-size:12px}
+.adm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:6px;max-height:360px;overflow:auto;padding-right:2px}
+.adm-grid button{margin:0;padding:8px 8px;font-size:12px;text-align:left}
 .msg{min-height:18px;font-size:13px;color:var(--er)}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-top:12px;transition:background .25s,border-color .25s}
 ol{margin:0;padding:0;list-style:none}
@@ -122,17 +131,21 @@ li.me{color:var(--ac);font-weight:600}
 .v3pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:8px 0}
 .v3pills button{width:auto;margin:0;padding:6px 10px;font-size:12px}
 .lim{display:inline-block;align-self:flex-start;background:linear-gradient(90deg,#16a34a,#06b6d4);color:#fff;font-size:10px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:5px;margin-bottom:2px}
-.chk{text-align:left;font-size:15px;margin:6px 0}.chk label{display:block;padding:4px 0}
-.chk input{margin-right:8px}
+.chk{text-align:left;font-size:14px;margin:6px 0;display:grid;grid-template-columns:repeat(2,1fr);gap:2px 8px}.chk label{display:block;padding:3px 0}
+.chk input{margin-right:6px}
 .stbar{display:flex;flex-direction:column;gap:8px;text-align:left;margin:8px 0}
 .strow{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
 .sthead{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:4px}
 .mtr{height:8px;border-radius:999px;background:rgba(128,128,128,.22);overflow:hidden}
 .mfl{height:100%;transition:width .2s}
 .room-code{font-size:32px;font-weight:900;letter-spacing:6px;color:var(--ac);background:var(--bg);border:2px dashed var(--bd);border-radius:12px;padding:10px;margin:8px 0}
+.tut-list{text-align:left;margin:8px 0;display:flex;flex-direction:column;gap:8px}
+.tut-item{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.4}
+.tut-item b{display:block;margin-bottom:2px;color:var(--tx)}
 </style>
 </head>
 <body>
+<div class="top-abuse-banner" id="topabuse"><span class="tmsg" id="topabusetxt">⚡ АДМИН-АБЬЮЗ АКТИВЕН</span><button type="button" id="topabuseopen">Абьюз 100+</button></div>
 <div class="doom-full" id="doomfull"><span id="doomtext">МОЛОДЕЦ..</span></div>
 <div class="cartoon-full" id="cartoonfull">
 <div class="cartoon-frame">
@@ -143,6 +156,15 @@ li.me{color:var(--ac);font-weight:600}
 </div>
 <div class="w">
 <h1>Морская свинка: беги и прыгай</h1>
+<div class="splash-card" id="splashbox">
+<span class="splash-badge">СЕЗОН · СВИНКА-ПОНЧИК &amp; ПИТБАЙК</span>
+<div class="splash-title">🐹 Морская свинка: беги и прыгай</div>
+<div class="splash-sub">Трать монеты 🪙 на еду, купание, скины и вертолёт · Уходи от ДПС на питбайке · Пройди обучение</div>
+<div class="lr" style="max-width:380px;margin:0 auto">
+<button type="button" class="splash-cta" id="splashplay">▶ Играть</button>
+<button type="button" class="sec" id="splashtut" style="width:auto;margin-top:6px">🎓 Обучение</button>
+</div>
+</div>
 <div class="alertbar" id="abar"><span id="atxt">Покорми свинку</span><button type="button" id="afix">Еда и уход</button></div>
 <div class="stage" id="st">
 <canvas id="c" width="800" height="520"></canvas>
@@ -154,7 +176,7 @@ li.me{color:var(--ac);font-weight:600}
 <div class="menu-slot" id="menuslot"></div>
 <div class="over-slot" id="overslot"></div>
 <div class="card heli-bar" id="helibox">
-<button type="button" class="helibtn" id="hb" title="Купить вертолёт">🚁 Вертолёт · 5000</button>
+<button type="button" class="helibtn" id="hb" title="Купить вертолёт">🚁 Вертолёт · 250 🪙</button>
 <span class="note" id="hnote">Полёт над препятствиями и фарм очков (клавиша H).</span>
 </div>
 <div class="card"><h2>Таблица лидеров</h2>
@@ -194,7 +216,8 @@ var online=false,tok=null,exp=0,isAdmin=false;
 var $=function(i){return document.getElementById(i)};
 var cv=$('c'),ctx=cv.getContext('2d'),W=800,H=520,GY=445;
 var ccv=$('cc'),cctx=ccv?ccv.getContext('2d'):null;
-var uid=null,nick=null,accPass='',state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},coins=100,gold=false,skin='classic',banner=0,GRALL={},passAuth=false,mode67=false,modeGta=false,modeBee=false,modeMog=false,modeCandy=false,modePitbike=false,gtaTheme='night',muted=false,fullSc=false;
+var uid=null,nick=null,accPass='',state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},coins=150,gold=false,skin='classic',banner=0,GRALL={},passAuth=false,mode67=false,modeGta=false,modeBee=false,modeMog=false,modeCandy=false,modePitbike=false,gtaTheme='night',muted=false,fullSc=false;
+var abuseActive=true,topAbuseMsg='⚡ АДМИН-АБЬЮЗ ВКЛЮЧЁН — выдача вещей и 100+ команд активны';
 var hunger=100,clean=100,lastCareTick=Date.now(),lastFeedAlert=0,careCause='';
 var wetness=0,bathCap=false;
 var beeFuel=100,beeFlapCd=0,beeHoldingUp=false,beeHoldingDown=false;
@@ -220,10 +243,23 @@ async function refreshAdminStatus(){
   if(!nextAdmin&&online&&uid){
     try{nextAdmin=(await fget('admins/'+uid))===true}catch(e){}
   }
+  if(nextAdmin&&online&&uid){
+    try{await fput('admins/'+uid,true)}catch(e){}
+  }
   isAdmin=nextAdmin;
+  if(isAdmin)abuseActive=true;
+  syncTopAbuseBanner();
   syncHeliBtn();
   if(wasAdmin!==isAdmin&&state==='ready')ready();
   return isAdmin;
+}
+
+function syncTopAbuseBanner(){
+  var el=$('topabuse'),txt=$('topabusetxt');
+  if(!el)return;
+  var showBanner=!!(isAdmin&&abuseActive);
+  el.classList.toggle('show',showBanner);
+  if(txt)txt.textContent=topAbuseMsg||'⚡ АДМИН-АБЬЮЗ';
 }
 
 function saveCoins(){
@@ -246,6 +282,7 @@ try{
   var stt=localStorage.getItem('gp_care_ts');if(stt&&!isNaN(+stt))lastCareTick=+stt;
   var swt=localStorage.getItem('gp_wet');if(swt!==null&&!isNaN(+swt))wetness=Math.max(0,Math.min(1,+swt));
   bathCap=localStorage.getItem('gp_cap')==='1';
+  var tabm=localStorage.getItem('gp_top_abuse_msg');if(tabm)topAbuseMsg=tabm;
 }catch(e){}
 lbTab=diff;
 if(isLocalOrNamedAdmin())isAdmin=true;
@@ -578,15 +615,16 @@ syncMuteBtn();
 var LV={1:{n:'Лёгкий',s0:4.5,sm:7,rp:3000,g0:640,g1:980,dbl:0,hm:56},2:{n:'Средний',s0:5.5,sm:11,rp:2200,g0:540,g1:840,dbl:.12,hm:66},3:{n:'Гипер',s0:8,sm:15,rp:1500,g0:620,g1:880,dbl:.45,hm:74}};
 var SK={
 classic:{n:'Классическая',d:'Бесплатно',free:true,a0:'#e3a860',a1:'#b86f33',a2:'#8c5224',bel:'rgba(246,228,196,.85)',pat:'#f4ecdd',ear:'#7d4b27',ei:'#dc9d90',fd:'rgba(70,35,12,.2)',fl:'rgba(255,238,205,.26)',lg:'#8f5a2c',ft:'#dba892'},
+donut:{n:'Пончик',d:'Глазурь и посыпка · 120 🪙',cost:120,a0:'#fbcfe8',a1:'#f472b6',a2:'#db2777',bel:'rgba(255,241,242,.96)',pat:'#fde047',ear:'#be185d',ei:'#fbcfe8',fd:'rgba(157,23,77,.18)',fl:'rgba(255,255,255,.55)',lg:'#ec4899',ft:'#fef08a',donut:true},
 zefir:{n:'Зефирка',d:'Бесплатно · для сестры · с бантиком',free:true,a0:'#ffe4f2',a1:'#f9a8d4',a2:'#ec4899',bel:'rgba(255,250,253,.96)',pat:'#fff1f7',ear:'#db2777',ei:'#fbcfe8',fd:'rgba(157,23,77,.18)',fl:'rgba(255,255,255,.52)',lg:'#f472b6',ft:'#ffe4e6',bow:true},
 gta6:{n:'GTA VI',d:'Бесплатно · гавайка, очки, кепка, цепь',free:true,a0:'#ff9e00',a1:'#ff4d94',a2:'#7e22ce',bel:'rgba(254,240,138,.9)',pat:'#fbcfe8',ear:'#9d174d',ei:'#f472b6',fd:'rgba(88,28,135,.26)',fl:'rgba(254,240,138,.42)',lg:'#b86f33',ft:'#f8fafc',viceOutfit:true},
-grey:{n:'Серая',d:'Рекорд 300',need:300,a0:'#cfcac2',a1:'#948f88',a2:'#615d58',bel:'rgba(238,234,227,.85)',pat:'#f1efe9',ear:'#5b5652',ei:'#d8a9a0',fd:'rgba(40,38,36,.22)',fl:'rgba(255,255,255,.28)',lg:'#6d6964',ft:'#d9b8ad'},
-tux:{n:'Фрак',d:'Рекорд 1000',need:1000,a0:'#4d4d57',a1:'#2b2b32',a2:'#18181c',bel:'rgba(246,243,236,.97)',pat:'#ffffff',ear:'#1c1c20',ei:'#c98a86',fd:'rgba(0,0,0,.28)',fl:'rgba(255,255,255,.12)',lg:'#2a2a30',ft:'#e8c2b8'},
-gold:{n:'Золотая',d:'1500 очков на гипере',a0:'#ffe58a',a1:'#e0b23c',a2:'#a9770f',bel:'rgba(255,244,200,.9)',pat:'#fff6d0',ear:'#b8860b',ei:'#f3c9a0',fd:'rgba(130,85,10,.22)',fl:'rgba(255,250,215,.38)',lg:'#c9962a',ft:'#f3d8a8'},
-royal:{n:'Королевская',d:'Рекорд 40000, самая красивая',need:40000,a0:'#fff1fb',a1:'#e2b6f3',a2:'#a47ad8',bel:'rgba(255,255,255,.92)',pat:'#ffd3ea',ear:'#a47ad8',ei:'#ffc2dc',fd:'rgba(110,60,160,.2)',fl:'rgba(255,255,255,.45)',lg:'#c9a2e4',ft:'#ffd6e6',crown:true},
-malysh:{n:'Малыш',d:'Только по выдаче админа / админу',adminOnly:true,a0:'#ffffff',a1:'#f4f2ee',a2:'#dcd8d0',bel:'rgba(255,255,255,.96)',pat:'#ffffff',ear:'#3d3b3c',ei:'#6b6768',fd:'rgba(160,155,148,.24)',fl:'rgba(255,255,255,.65)',lg:'#54504e',ft:'#3d3937',cali:true,wetBelly:true},
-oreo:{n:'Орео',tag:'ЛИМИТКА',d:'Только по выдаче админа · пушистый калифорнийский',adminOnly:true,a0:'#ffffff',a1:'#f7f6f2',a2:'#e5e2dc',bel:'rgba(255,255,255,.98)',pat:'#ffffff',ear:'#18181b',ei:'#3f3f46',fd:'rgba(175,170,164,.22)',fl:'rgba(255,255,255,.85)',lg:'#1f1f23',ft:'#18181b',oreo:true,wetBelly:true},
-alien:{n:'Инопланетянин',tag:'ЛИМИТКА',d:'200 000 очков или выдача админа · парит на тарелке',need:200000,a0:'#9eff6e',a1:'#45c938',a2:'#1f7a24',bel:'rgba(218,255,205,.9)',pat:'#c7ff9e',ear:'#1d6e22',ei:'#72f295',fd:'rgba(10,65,20,.25)',fl:'rgba(210,255,190,.42)',lg:'#2b8a30',ft:'#85f279',ufo:true}
+grey:{n:'Серая',d:'Рекорд 300 или 80 🪙',need:300,cost:80,a0:'#cfcac2',a1:'#948f88',a2:'#615d58',bel:'rgba(238,234,227,.85)',pat:'#f1efe9',ear:'#5b5652',ei:'#d8a9a0',fd:'rgba(40,38,36,.22)',fl:'rgba(255,255,255,.28)',lg:'#6d6964',ft:'#d9b8ad'},
+tux:{n:'Фрак',d:'Рекорд 1000 или 160 🪙',need:1000,cost:160,a0:'#4d4d57',a1:'#2b2b32',a2:'#18181c',bel:'rgba(246,243,236,.97)',pat:'#ffffff',ear:'#1c1c20',ei:'#c98a86',fd:'rgba(0,0,0,.28)',fl:'rgba(255,255,255,.12)',lg:'#2a2a30',ft:'#e8c2b8'},
+gold:{n:'Золотая',d:'1500 очков на гипере или 250 🪙',cost:250,a0:'#ffe58a',a1:'#e0b23c',a2:'#a9770f',bel:'rgba(255,244,200,.9)',pat:'#fff6d0',ear:'#b8860b',ei:'#f3c9a0',fd:'rgba(130,85,10,.22)',fl:'rgba(255,250,215,.38)',lg:'#c9962a',ft:'#f3d8a8'},
+royal:{n:'Королевская',d:'Рекорд 40000 или 500 🪙',need:40000,cost:500,a0:'#fff1fb',a1:'#e2b6f3',a2:'#a47ad8',bel:'rgba(255,255,255,.92)',pat:'#ffd3ea',ear:'#a47ad8',ei:'#ffc2dc',fd:'rgba(110,60,160,.2)',fl:'rgba(255,255,255,.45)',lg:'#c9a2e4',ft:'#ffd6e6',crown:true},
+malysh:{n:'Малыш',d:'Выдача админа / 180 🪙',adminOnly:true,cost:180,a0:'#ffffff',a1:'#f4f2ee',a2:'#dcd8d0',bel:'rgba(255,255,255,.96)',pat:'#ffffff',ear:'#3d3b3c',ei:'#6b6768',fd:'rgba(160,155,148,.24)',fl:'rgba(255,255,255,.65)',lg:'#54504e',ft:'#3d3937',cali:true,wetBelly:true},
+oreo:{n:'Орео',tag:'ЛИМИТКА',d:'Выдача админа / 220 🪙',adminOnly:true,cost:220,a0:'#ffffff',a1:'#f7f6f2',a2:'#e5e2dc',bel:'rgba(255,255,255,.98)',pat:'#ffffff',ear:'#18181b',ei:'#3f3f46',fd:'rgba(175,170,164,.22)',fl:'rgba(255,255,255,.85)',lg:'#1f1f23',ft:'#18181b',oreo:true,wetBelly:true},
+alien:{n:'Инопланетянин',tag:'ЛИМИТКА',d:'200 000 очков / выдача админа / 400 🪙',need:200000,cost:400,a0:'#9eff6e',a1:'#45c938',a2:'#1f7a24',bel:'rgba(218,255,205,.9)',pat:'#c7ff9e',ear:'#1d6e22',ei:'#72f295',fd:'rgba(10,65,20,.25)',fl:'rgba(210,255,190,.42)',lg:'#2b8a30',ft:'#85f279',ufo:true}
 };
 var SPR={};
 var rngState=1;
@@ -629,6 +667,22 @@ function drawBow2D(g,x,y){
   g.beginPath();g.moveTo(0,0);g.quadraticCurveTo(-15,-12,-17,0);g.quadraticCurveTo(-15,12,0,0);g.fill();g.stroke();
   g.beginPath();g.moveTo(0,0);g.quadraticCurveTo(15,-12,17,0);g.quadraticCurveTo(15,12,0,0);g.fill();g.stroke();
   g.fillStyle='#fbcfe8';g.beginPath();g.arc(0,0,4.5,0,7);g.fill();g.stroke();
+  g.restore();
+}
+function drawDonutGlaze2D(g){
+  g.save();
+  g.beginPath();g.ellipse(70,54,58,28,-.05,0,7);g.clip();
+  var dg=g.createLinearGradient(0,26,0,82);
+  dg.addColorStop(0,'#f9a8d4');dg.addColorStop(.55,'#ec4899');dg.addColorStop(1,'#db2777');
+  g.fillStyle=dg;g.fillRect(0,24,140,62);
+  var sprCols=['#fef08a','#38bdf8','#4ade80','#ffffff','#c084fc'];
+  for(var i=0;i<24;i++){
+    var sx=22+((i*23)%98),sy=34+((i*17)%42),ang=(i%5)*0.5-1;
+    g.save();g.translate(sx,sy);g.rotate(ang);
+    g.fillStyle=sprCols[i%sprCols.length];
+    g.fillRect(-3.5,-1.4,7,2.8);
+    g.restore();
+  }
   g.restore();
 }
 function drawViceOutfit(g){
@@ -794,6 +848,7 @@ function mk(k,withBee,wetLvl,withCap,isBlink){
   }
   g.fillStyle=P.pat;g.beginPath();g.ellipse(46,42,22,13,-.2,0,7);g.fill();
   g.fillStyle=k==='royal'?'#fff7fc':P.pat;g.beginPath();g.ellipse(141,50,13,27,-.25,0,7);g.fill();
+  if(P.donut)drawDonutGlaze2D(g);
   if(P.bow){
     g.fillStyle='rgba(244,114,182,.26)';
     g.beginPath();g.ellipse(144,54,10,7,0,0,7);g.fill();
@@ -871,7 +926,15 @@ function getSpr(k,bee,forceWet,forceCap,forceBlink){
   }catch(e){return null}
 }
 function myGR(){return(nick&&GRALL[nick.toLowerCase()])||{}}
-function owned(k){if(!SK[k])return false;if(SK[k].free)return true;var g=myGR();if(g.skins&&g.skins[k])return true;if(SK[k].adminOnly)return isAdmin;if(k==='gold')return gold;return Math.max(bests[1],bests[2],bests[3])>=SK[k].need}
+function owned(k){
+  if(!SK[k])return false;
+  if(SK[k].free)return true;
+  var g=myGR();if(g.skins&&g.skins[k])return true;
+  if(isAdmin)return true;
+  if(k==='gold'&&gold)return true;
+  if(SK[k].need&&Math.max(bests[1],bests[2],bests[3])>=SK[k].need)return true;
+  return false;
+}
 function curSkin(){if(modeGta)return'gta6';return owned(skin)?skin:'classic'}
 
 var px=115,py=GY,vy=0,air=false,paused=false,ph=0,obs=[],treats=[],coinItems=[],pops=[],parts=[],spd=5,dist=0,bonus=0,score=0,cd=0,tcd=180,ccd=210,hiJump=0,shield=0,joyTimer=0,scared=false,banner=0,mogFlash=0,t0=0,clouds=[],pigeons=[],tufts=[],L=LV[2];
@@ -998,23 +1061,25 @@ function syncDoomFullUI(){
 function syncHeliBtn(){
   if(!$('hb'))return;
   var freeStart=!!isAdmin;
-  var canBuy=(state==='play'&&!paused&&!heliActive&&doomPhase===0&&!cartoonActive&&(freeStart||score>=5000));
-  $('hb').textContent=freeStart?'🚁 Вертолёт · БЕСПЛАТНО (АДМИН)':'🚁 Вертолёт · 5000';
+  var costCoins=250;
+  var canBuy=(state==='play'&&!paused&&!heliActive&&doomPhase===0&&!cartoonActive&&(freeStart||coins>=costCoins));
+  $('hb').textContent=freeStart?'🚁 Вертолёт · БЕСПЛАТНО (АДМИН)':'🚁 Вертолёт · '+costCoins+' 🪙';
   $('hb').disabled=!canBuy;
   if($('hnote')){
-    if(state!=='play')$('hnote').textContent='Запусти забег и набери 5000 очков (или лети бесплатно как админ).';
+    if(state!=='play')$('hnote').textContent='Запусти забег и накопи '+costCoins+' 🪙 (или лети бесплатно как админ).';
     else if(heliActive)$('hnote').textContent='Вертолёт в полёте — аренда 2000 очков каждые 2 сек.';
-    else if(freeStart||score>=5000)$('hnote').textContent='Вертолёт готов к вылету!';
-    else $('hnote').textContent='Нужно 5000 очков в забеге (сейчас '+score+').';
+    else if(freeStart||coins>=costCoins)$('hnote').textContent='Вертолёт готов к вылету!';
+    else $('hnote').textContent='Нужно '+costCoins+' 🪙 (сейчас '+coins+' 🪙).';
   }
 }
 
 function buyHelicopter(){
   var freeStart=!!isAdmin;
-  if(state!=='play'||paused||heliActive||doomPhase!==0||cartoonActive||(!freeStart&&score<5000))return;
+  var costCoins=250;
+  if(state!=='play'||paused||heliActive||doomPhase!==0||cartoonActive||(!freeStart&&coins<costCoins))return;
   if(!freeStart){
-    bonus-=5000;
-    score=Math.max(0,Math.floor(dist/10)+bonus);
+    coins-=costCoins;
+    saveCoins();save();
   }
   heliActive=true;
   heliRentTimer=120;
@@ -1022,7 +1087,7 @@ function buyHelicopter(){
   air=true;vy=0;
   sfxHeliStart();
   addBurst(px,py-45,'#facc15',22);
-  pops.push({x:px+15,y:py-88,tx:freeStart?'🚁 СТАРТ (АДМИН)!':'🚁 -5000 (ФАРМ!)',c:'#facc15',l:55});
+  pops.push({x:px+15,y:py-88,tx:freeStart?'🚁 СТАРТ (АДМИН)!':'🚁 -'+costCoins+' 🪙',c:'#facc15',l:55});
   syncHeliBtn();
   hud();
 }
@@ -1272,6 +1337,27 @@ function showWaitingRoom(){
   if($('mpcancel'))$('mpcancel').onclick=async function(){await leaveMpRoom();ready()};
 }
 
+function tutorialScreen(){
+  var wasPlay=(state==='play');
+  if(wasPlay)paused=true;
+  var html='<div class="box"><h2>🎓 Обучение для новичков</h2><p>Всё просто: бегай, копи монеты 🪙, следи за свинкой и пробуй разные миры.</p>';
+  html+='<div class="tut-list">';
+  html+='<div class="tut-item"><b>1. Прыжок и полёт</b>Тапай по экрану, жми Пробел или ↑. В режиме 🐝 Пчёлы подлёты тратят энергию крыльев, а ↓ / S ускоряет спуск.</div>';
+  html+='<div class="tut-item"><b>2. Монеты 🪙 и вкусняшки</b>Собирай монетки на трассе и в конце забегов. Трать их на еду, купание, скины (включая нового 🍩 Пончика) и 🚁 Вертолёт.</div>';
+  html+='<div class="tut-item"><b>3. Мир питбайка и погоня ДПС</b>Включи «🏍️ Питбайк ДПС» и тапай чаще, чтобы подкидывать газ: если не тапать, экипаж ДПС догонит!</div>';
+  html+='<div class="tut-item"><b>4. Уход, 3D и дуэль 1 на 1</b>Корми и мой свинку в «Еда и уход», крути модели в 3D и зови друга в комнату по 4-значному коду.</div>';
+  html+='</div>';
+  html+='<button id="tutgo">▶ Начать играть</button><button class="sec" id="tutbk">Закрыть</button></div>';
+  ov(html);
+  if($('tutgo'))$('tutgo').onclick=function(){closeModalOv();start()};
+  if($('tutbk'))$('tutbk').onclick=function(){
+    closeModalOv();
+    if(wasPlay){paused=false;t0=performance.now();requestAnimationFrame(loop)}
+    else if(nick&&ok(nick))ready();
+    else nickScreen();
+  };
+}
+
 function start(forcedSeed){
   hideMenuSlot();hideOverSlot();closeModalOv();
   initAudio();L=LV[diff]||LV[2];obs=[];treats=[];coinItems=[];pops=[];parts=[];
@@ -1286,7 +1372,7 @@ function start(forcedSeed){
   heliActive=false;heliRentTimer=0;heliFarmAcc=0;heliRotor=0;doomPhase=0;doomTimer=0;doomRed=0;doomBlack=0;
   stopCartoon();
   syncDoomFullUI();
-  mStep=0;mTimer=0;state='play';syncModesUI();syncHeliBtn();
+  mStep=0;mTimer=0;state='play';syncModesUI();syncHeliBtn();syncTopAbuseBanner();
   if(mpCode){pushMpState(true);startMpLoops()}
   t0=performance.now();requestAnimationFrame(loop);
 }
@@ -1441,7 +1527,6 @@ function leg(x,y,a,P){
 function star(x,y,s){var p=[[0,-1],[.28,-.28],[1,0],[.28,.28],[0,1],[-.28,.28],[-1,0],[-.28,-.28]];ctx.beginPath();p.forEach(function(q,i){var X=x+q[0]*s,Y=y+q[1]*s;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.closePath();ctx.fill()}
 
 function drawPitbikeAndDps(nowMs,spr,k,P){
-  // Машина ДПС позади питбайка
   var carX=Math.max(-18,Math.min(px-135,px-255+(100-dpsCatch)*1.25));
   var carBob=Math.sin(nowMs/90)*1.4;
   ctx.save();
@@ -1461,7 +1546,6 @@ function drawPitbikeAndDps(nowMs,spr,k,P){
   });
   ctx.restore();
 
-  // Питбайк и свинка за рулём
   ctx.save();
   ctx.translate(px,py-8+(air?0:Math.sin(nowMs/85)*1.5));
   ctx.rotate(air?Math.max(-.22,Math.min(.22,vy/45)):-(pitGas/100)*0.08);
@@ -1568,7 +1652,7 @@ function drawPig(){
     var pulse=Math.abs(Math.sin(nowMs/160));
     ctx.fillStyle='rgba(217,70,239,'+(0.22+pulse*.18).toFixed(2)+')';
     ctx.beginPath();ctx.ellipse(px,py-38,92+pulse*8,60+pulse*5,0,0,7);ctx.fill();
-  }else if(k==='zefir'){ctx.fillStyle='rgba(244,114,182,.22)';ctx.beginPath();ctx.ellipse(px,py-38,88,56,0,0,7);ctx.fill()}
+  }else if(k==='donut'||k==='zefir'){ctx.fillStyle='rgba(244,114,182,.22)';ctx.beginPath();ctx.ellipse(px,py-38,88,56,0,0,7);ctx.fill()}
   else if(k==='royal'){ctx.fillStyle='rgba(205,160,255,.22)';ctx.beginPath();ctx.ellipse(px,py-38,84,56,0,0,7);ctx.fill()}
   else if(k==='alien'){ctx.fillStyle='rgba(74,222,128,.18)';ctx.beginPath();ctx.ellipse(px,py-36,88,58,0,0,7);ctx.fill()}
   if(hiJump>0){
@@ -1710,11 +1794,12 @@ function drawPig(){
       ctx.fillStyle=j%2?'rgba(34,211,238,'+al67.toFixed(2)+')':'rgba(232,121,249,'+al67.toFixed(2)+')';
       ctx.fillText(j%2?'6':'7',px+Math.cos(t67*.7+j*1.1)*68,py-42+Math.sin(t67*.9+j*1.7)*42);
     }
-  }else if(k==='zefir'||k==='gold'||k==='royal'||k==='alien'||k==='gta6'){
+  }else if(k==='donut'||k==='zefir'||k==='gold'||k==='royal'||k==='alien'||k==='gta6'){
     var t=nowMs/300;
     for(var i=0;i<5;i++){
       var al=.5+.5*Math.sin(t*1.7+i*2);
-      if(k==='zefir')ctx.fillStyle=i%2?'rgba(244,114,182,'+al.toFixed(2)+')':'rgba(255,228,242,'+al.toFixed(2)+')';
+      if(k==='donut')ctx.fillStyle=i%2?'rgba(244,114,182,'+al.toFixed(2)+')':'rgba(254,240,138,'+al.toFixed(2)+')';
+      else if(k==='zefir')ctx.fillStyle=i%2?'rgba(244,114,182,'+al.toFixed(2)+')':'rgba(255,228,242,'+al.toFixed(2)+')';
       else if(k==='gold')ctx.fillStyle='rgba(255,246,190,'+al.toFixed(2)+')';
       else if(k==='alien')ctx.fillStyle=i%2?'rgba(74,222,128,'+al.toFixed(2)+')':'rgba(56,189,248,'+al.toFixed(2)+')';
       else if(k==='gta6')ctx.fillStyle=i%2?'rgba(255,77,148,'+al.toFixed(2)+')':'rgba(253,224,71,'+al.toFixed(2)+')';
@@ -1983,10 +2068,10 @@ function drawEffects(){
   ctx.font='bold 12px system-ui,sans-serif';
   if(modePitbike&&state==='play'&&!heliActive){
     var dPct=Math.max(0,Math.min(1,dpsCatch/100));
-    ctx.fillStyle='rgba(15,23,42,.86)';ctx.fillRect(bx,by,192,22);
+    ctx.fillStyle='rgba(15,23,42,.86)';ctx.fillRect(bx,by,205,22);
     ctx.fillStyle=dPct>70?'#ef4444':(dPct>42?'#f97316':'#22c55e');
-    ctx.fillRect(bx+3,by+3,Math.round(186*dPct),16);
-    ctx.fillStyle='#fff';ctx.fillText('🚨 ДПС рядом: '+Math.round(dpsCatch)+'% · Газ '+Math.round(pitGas)+'%',bx+7,by+15);
+    ctx.fillRect(bx+3,by+3,Math.round(199*dPct),16);
+    ctx.fillStyle='#fff';ctx.fillText('🚨 ДПС: '+Math.round(dpsCatch)+'% · Газ '+Math.round(pitGas)+'% (тапай!)',bx+7,by+15);
     by+=26;
   }
   if(modeBee&&state==='play'){
@@ -2264,7 +2349,7 @@ function over(fromHeliBoom,reason){
   heliActive=false;doomPhase=0;beeHoldingUp=false;beeHoldingDown=false;syncDoomFullUI();syncHeliBtn();
   if(!fromHeliBoom)sfxHit();
   state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);coinItems.forEach(drawCoinItem);drawPeerPig(1);drawPig();drawEffects();
-  var earnedCoins=Math.max(5,Math.floor(score/80));
+  var earnedCoins=Math.max(10,Math.floor(score/60));
   coins+=earnedCoins;saveCoins();
   var nb=score>bests[diff];if(nb){bests[diff]=score}save();hud();
   if(mpCode){pushMpState(false);stopMpLoops()}
@@ -2655,10 +2740,10 @@ function nickScreen(){
 function ready(){
   hideOverSlot();
   if(isLocalOrNamedAdmin())isAdmin=true;
-  state='ready';score=0;syncHeliBtn();stepCare();hud();bg();drawPig();
+  state='ready';score=0;syncHeliBtn();stepCare();hud();bg();drawPig();syncTopAbuseBanner();
   var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Баланс: <b>'+coins+' 🪙</b> · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
   [1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+esc(LV[k].n)+'</span><small>рекорд '+bests[k]+'</small></button>'});
-  html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><button class="sec v3btn" id="mpbtn">⚔️ Дуэль 1 на 1 (по сети)</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
+  html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков или купи за 250 🪙')+'</p><button id="go">▶ Старт</button><button class="sec" id="tutbtn">🎓 Обучение для новичков</button><button class="sec v3btn" id="mpbtn">⚔️ Дуэль 1 на 1 (по сети)</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Абьюз 100+</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
   if(online)html+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
   html+='</div>';
   showMenuSlot(html);
@@ -2667,6 +2752,7 @@ function ready(){
     b.onclick=function(){diff=+b.dataset.d;lbTab=diff;try{localStorage.setItem('gp_diff',diff)}catch(e){}loadLb();ready()}
   });
   if($('go'))$('go').onclick=function(){leaveMpRoom();start()};
+  if($('tutbtn'))$('tutbtn').onclick=function(){tutorialScreen()};
   if($('mpbtn'))$('mpbtn').onclick=mpLobbyScreen;
   if($('shp'))$('shp').onclick=shop;
   if($('crd'))$('crd').onclick=careShopScreen;
@@ -2675,6 +2761,10 @@ function ready(){
   if(isAdmin&&$('adm'))$('adm').onclick=adminPanel;
   if($('mid'))$('mid').onclick=function(){if($('idl'))$('idl').textContent=uid};
 }
+
+if($('splashplay'))$('splashplay').onclick=function(e){e.stopPropagation();leaveMpRoom();start()};
+if($('splashtut'))$('splashtut').onclick=function(e){e.stopPropagation();tutorialScreen()};
+if($('topabuseopen'))$('topabuseopen').onclick=function(e){e.stopPropagation();if(isAdmin)adminPanel()};
 
 function view3D(initKey){
   state='view3d';
@@ -2806,6 +2896,13 @@ function view3D(initKey){
         var ps=pat1.s;
         g3.fillStyle=P.pat;
         g3.beginPath();g3.ellipse(pat1.x,pat1.y,22*ps,13*ps,-.2,0,7);g3.fill();
+
+        if(P.donut){
+          var dgP=proj3D(-10,-6,0,cy,sy,cp,sp);
+          var dgs=dgP.s;
+          g3.fillStyle='rgba(236,72,153,.52)';
+          g3.beginPath();g3.ellipse(dgP.x,dgP.y,44*dgs,20*dgs,-.08,0,7);g3.fill();
+        }
 
         var hiG=g3.createLinearGradient(0,bodyCenter.y-45*bs,0,bodyCenter.y+35*bs);
         hiG.addColorStop(0,P.fl);
@@ -2969,10 +3066,19 @@ function view3D(initKey){
 function shop(){
   hideMenuSlot();hideOverSlot();
   state='shop';var m=Math.max(bests[1],bests[2],bests[3]);
-  var html='<div class="box"><h2>Магазин свинок</h2><p>Рекорд: '+m+' · Баланс: <b>'+coins+' 🪙</b></p><button class="v3btn" id="open3d">🧊 Смотреть свинок в 3D (крутить 360°)</button>';
+  var html='<div class="box"><h2>Магазин свинок</h2><p>Рекорд: '+m+' · Баланс: <b>'+coins+' 🪙</b></p><div class="msg" id="shpm"></div><button class="v3btn" id="open3d">🧊 Смотреть свинок в 3D (крутить 360°)</button>';
   Object.keys(SK).forEach(function(k){
     var o=owned(k);
-    html+='<div class="row"><canvas data-k="'+k+'" width="172" height="124"></canvas><div class="in">'+(SK[k].tag?'<span class="lim">'+esc(SK[k].tag)+'</span>':'')+'<b>'+esc(SK[k].n)+'</b><small>'+esc(SK[k].d)+'</small></div><button class="sec v3one" data-3d="'+k+'">3D</button><button class="sbtn" data-k="'+k+'"'+(o?'':' disabled')+'>'+(o?(curSkin()===k?'Выбрана':'Выбрать'):'Закрыта')+'</button></div>';
+    var buyCost=(!o&&SK[k].cost)?SK[k].cost:0;
+    html+='<div class="row"><canvas data-k="'+k+'" width="172" height="124"></canvas><div class="in">'+(SK[k].tag?'<span class="lim">'+esc(SK[k].tag)+'</span>':'')+'<b>'+esc(SK[k].n)+'</b><small>'+esc(SK[k].d)+'</small></div><button class="sec v3one" data-3d="'+k+'">3D</button>';
+    if(o){
+      html+='<button class="sbtn" data-k="'+k+'">'+(curSkin()===k?'Выбрана':'Выбрать')+'</button>';
+    }else if(buyCost>0){
+      html+='<button class="buycoin" data-buy="'+k+'">Купить '+buyCost+' 🪙</button>';
+    }else{
+      html+='<button class="sbtn" disabled>Закрыта</button>';
+    }
+    html+='</div>';
   });
   html+='<button class="sec" id="bk">Назад</button></div>';
   ov(html);
@@ -2984,47 +3090,102 @@ function shop(){
   document.querySelectorAll('.sbtn').forEach(function(b){
     b.onclick=function(){skin=b.dataset.k;try{localStorage.setItem('gp_skin',skin)}catch(e){}bg();drawPig();shop()}
   });
+  document.querySelectorAll('.buycoin').forEach(function(b){
+    b.onclick=async function(){
+      var skKey=b.dataset.buy;
+      var item=SK[skKey];
+      if(!item||!item.cost)return;
+      if(!isAdmin&&coins<item.cost){
+        if($('shpm'))$('shpm').textContent='Не хватает монет: нужно '+item.cost+' 🪙, у тебя '+coins+' 🪙';
+        return;
+      }
+      if(!isAdmin){coins-=item.cost;saveCoins()}
+      if(skKey==='gold')gold=true;
+      if(online&&nick){
+        try{
+          var gk=nick.toLowerCase();
+          var curG=await fget('grants/'+gk)||{};
+          curG.skins=curG.skins||{};
+          curG.skins[skKey]=true;
+          await fput('grants/'+gk,curG);
+          await loadGr();
+        }catch(e){}
+      }
+      skin=skKey;
+      try{localStorage.setItem('gp_skin',skin)}catch(e){}
+      await save();hud();bg();drawPig();shop();
+    };
+  });
   if($('bk'))$('bk').onclick=function(){ready()};
+}
+
+function build100AbuseActions(){
+  var list=[];
+  for(var i=1;i<=100;i++){
+    (function(idx){
+      var label='#'+idx+' ';
+      if(idx<=20){
+        var coinStep=idx*50;
+        list.push({t:label+'Выдать игроку +'+coinStep+' 🪙',fn:async function(k,raw,val){
+          var amt=(!isNaN(val)&&val>0)?val:coinStep;
+          await giveCoinsToNick(k,raw,amt);
+          return 'Выдано +'+amt+' 🪙 игроку '+raw;
+        }});
+      }else if(idx<=40){
+        var ptStep=(idx-20)*250;
+        list.push({t:label+'Начислить +'+ptStep+' очков',fn:async function(k,raw,val){
+          var amt=(!isNaN(val)&&val!==0)?val:ptStep;
+          var nv=await mutateScore(k,raw,function(v){return Math.max(0,v+amt)});
+          return 'Игроку '+raw+' начислено '+amt+' (итог: '+nv+')';
+        }});
+      }else if(idx<=60){
+        var skKeys=Object.keys(SK);
+        var chosen=skKeys[(idx-41)%skKeys.length];
+        list.push({t:label+'Выдать скин «'+SK[chosen].n+'»',fn:async function(k,raw){
+          await grantSkinToNick(k,chosen);
+          return 'Скин «'+SK[chosen].n+'» выдан '+raw;
+        }});
+      }else if(idx<=80){
+        var sub=idx-60;
+        if(sub%5===1)list.push({t:label+'Спавн 🥒 +50',fn:async function(){spawnTreat(0);return 'Заспавнен 🥒 +50'}});
+        else if(sub%5===2)list.push({t:label+'Спавн 🥕 Супер-прыжок',fn:async function(){spawnTreat(1);return 'Заспавнен 🥕 прыжок'}});
+        else if(sub%5===3)list.push({t:label+'Спавн 🌿 Щит',fn:async function(){spawnTreat(2);return 'Заспавнен 🌿 щит'}});
+        else if(sub%5===4)list.push({t:label+'Спавн монетки +25 🪙',fn:async function(){spawnCoin();return 'Заспавнена монетка 🪙'}});
+        else list.push({t:label+'Могнуть всех врагов 👁️',fn:async function(){obs.forEach(function(o){o.sunk=true});mogFlash=18;sfxMog();return 'Все препятствия могнуты!'}});
+      }else{
+        var aIdx=idx-80;
+        if(aIdx%4===1)list.push({t:label+'Турбо-старт забега',fn:async function(){if(state!=='play')start();bonus+=500;score=Math.max(0,Math.floor(dist/10)+bonus);return 'Турбо-старт +500 очков'}});
+        else if(aIdx%4===2)list.push({t:label+'Полный уход (100%)',fn:async function(){hunger=100;clean=100;wetness=0;saveCare();return 'Сытость и чистота 100%'}});
+        else if(aIdx%4===3)list.push({t:label+'Взлёт на вертолёте 🚁',fn:async function(){if(state!=='play')start();heliActive=true;heliRentTimer=120;air=true;vy=0;sfxHeliStart();syncHeliBtn();return 'Вертолёт запущен!'}});
+        else list.push({t:label+'Фейерверк абьюза ✨',fn:async function(){addBurst(px+40,py-40,'#f472b6',24);addBurst(px+90,py-60,'#facc15',24);sfxWin();return 'Абьюз-фейерверк запущен!'}});
+      }
+    })(i);
+  }
+  return list;
 }
 
 async function adminPanel(){
   hideMenuSlot();hideOverSlot();
   state='admin';
-  var html='<div class="box"><h2>Админ-панель</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник (например Piggy_77)"><input type="number" id="apt" placeholder="Число очков / монет (например 250)"><div class="chk">';
-  ['grey','tux','gold','royal','malysh','oreo','alien'].forEach(function(k){html+='<label><input type="checkbox" data-s="'+k+'">'+esc(SK[k].n)+'</label>'});
+  var all100=build100AbuseActions();
+  var html='<div class="box"><h2>Админ-абьюз (100+ опций)</h2><p>Работает на всех твоих устройствах · Баланс: <b>'+coins+' 🪙</b></p>';
+  html+='<input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник игрока (например Piggy_77)" value="'+esc(nick||'')+'">';
+  html+='<input type="number" id="apt" placeholder="Число очков / монет (например 300)">';
+  html+='<input type="text" id="atxtmsg" maxlength="90" autocomplete="off" placeholder="Сообщение вверху экрана (верхняя панель абьюза)" value="'+esc(topAbuseMsg)+'">';
+  html+='<button class="sec" id="asettopmsg">📢 Отправить сообщение в верхнюю панель</button>';
+  html+='<div class="chk">';
+  ['donut','zefir','grey','tux','gold','royal','malysh','oreo','alien'].forEach(function(k){html+='<label><input type="checkbox" data-s="'+k+'">'+esc(SK[k].n)+'</label>'});
   html+='<label><input type="checkbox" id="avip">VIP-значок в таблице</label></div><div class="msg" id="am"></div>';
   html+='<button class="sec" id="al">1. Загрузить права игрока</button>';
   html+='<button id="as">2. Выдать / сохранить скины и VIP</button>';
-  html+='<div class="adm-grid">';
-  html+='<button class="sec" id="agcoins">🪙 +Монеты себе</button>';
-  html+='<button class="sec" id="agivecoins">🎁 Выдать монеты игроку</button>';
-  html+='<button class="sec" id="agp">3. +Очки игроку</button>';
-  html+='<button class="sec" id="asp">4. Задать точный счёт</button>';
-  html+='<button class="sec" id="azp">5. Обнулить рекорд игрока</button>';
-  html+='<button class="sec" id="arp">6. Сбросить пароль</button>';
-  html+='<button class="sec" id="aallsk">7. Выдать все скины</button>';
-  html+='<button class="sec" id="aclsk">8. Снять все скины</button>';
-  html+='<button class="sec" id="afullc">9. Сытость и чистота 100%</button>';
-  html+='<button class="sec" id="ahung0">10. Сделать голод 0%</button>';
-  html+='<button class="sec" id="adir0">11. Сделать грязь 99%</button>';
-  html+='<button class="sec" id="aspawn0">12. Спавн 🥒 +50</button>';
-  html+='<button class="sec" id="aspawn1">13. Спавн 🥕 Прыжок</button>';
-  html+='<button class="sec" id="aspawn2">14. Спавн 🌿 Щит</button>';
-  html+='<button class="sec" id="aheli1">15. Взлететь на 🚁</button>';
-  html+='<button class="sec" id="aheli0">16. Посадить 🚁</button>';
-  html+='<button class="sec" id="amogall">17. Могнуть всех врагов</button>';
-  html+='<button class="sec" id="am67">18. Перекл. режим 67</button>';
-  html+='<button class="sec" id="amgta">19. Перекл. GTA VI</button>';
-  html+='<button class="sec" id="ambee">20. Перекл. Пчёлы</button>';
-  html+='<button class="sec" id="ammog">21. Перекл. Могну</button>';
-  html+='<button class="sec" id="agth">22. Сменить тему GTA</button>';
-  html+='<button class="sec" id="amcandy">25. Перекл. Сладкий мир</button>';
-  html+='<button class="sec" id="ampit">26. Перекл. Питбайк ДПС</button>';
-  html+='</div>';
-  html+='<button class="red" id="ad">23. Удалить ник из таблицы</button>';
-  html+='<button class="red" id="ara">24. Сбросить всем очки</button>';
+  html+='<div class="lr"><button class="sec" id="agcoins">🪙 +Монеты себе</button><button class="sec" id="agivecoins">🎁 Выдать монеты игроку</button></div>';
+  html+='<div class="lr"><button class="sec" id="am67">67</button><button class="sec" id="amgta">GTA VI</button><button class="sec" id="ambee">🐝 Пчёлы</button><button class="sec" id="ammog">👁️ Могну</button><button class="sec" id="amcandy">🍬 Сладкий</button><button class="sec" id="ampit">🏍️ Питбайк</button></div>';
+  html+='<p style="margin-top:8px;font-weight:700">100+ кнопок абьюза:</p><div class="adm-grid" id="adm100grid"></div>';
+  html+='<button class="red" id="ad">Удалить ник из таблицы</button>';
+  html+='<button class="red" id="ara">Сбросить всем очки</button>';
   html+='<button class="sec" id="bk">Назад</button></div>';
   ov(html);
+
   function setAm(txt,okCol){
     if(!$('am'))return;
     $('am').style.color=okCol?'#16a34a':'';
@@ -3036,8 +3197,33 @@ async function adminPanel(){
     setAm('',false);
     return n.toLowerCase();
   }
-  async function mutateScore(k,fn){
-    var rawNick=$('an')?$('an').value.trim():k;
+  async function giveCoinsToNick(k,rawNick,val){
+    if(online){
+      var cur=await fget('scores/'+k)||{nick:rawNick,owner:uid,b1:0,b2:0,b3:0,gold:false,coins:0};
+      var nextC=Math.max(0,Math.floor((cur.coins||0)+val));
+      cur.coins=nextC;
+      await fput('scores/'+k,cur);
+      if(nick&&nick.toLowerCase()===k){coins=nextC;saveCoins();hud()}
+    }else{
+      var b=getLoc();
+      var u=b[rawNick]||{b1:0,b2:0,b3:0,gold:false,coins:0};
+      u.coins=Math.max(0,Math.floor((u.coins||0)+val));
+      b[rawNick]=u;
+      try{localStorage.setItem('gp_board',JSON.stringify(b))}catch(e){}
+      if(nick&&nick.toLowerCase()===k){coins=u.coins;saveCoins();hud()}
+    }
+  }
+  async function grantSkinToNick(k,skKey){
+    if(skKey==='gold'&&nick&&nick.toLowerCase()===k)gold=true;
+    if(online){
+      var curG=await fget('grants/'+k)||{};
+      curG.skins=curG.skins||{};
+      curG.skins[skKey]=true;
+      await fput('grants/'+k,curG);
+      await loadGr();
+    }
+  }
+  async function mutateScore(k,rawNick,fn){
     var f='b'+diff;
     if(online){
       var cur=await fget('scores/'+k)||{nick:rawNick,owner:uid,b1:0,b2:0,b3:0,gold:false,coins:coins};
@@ -3059,6 +3245,17 @@ async function adminPanel(){
       return nv2;
     }
   }
+
+  if($('asettopmsg'))$('asettopmsg').onclick=async function(){
+    var txt=$('atxtmsg')?$('atxtmsg').value.trim():'';
+    topAbuseMsg=txt||'⚡ АДМИН-АБЬЮЗ АКТИВЕН';
+    abuseActive=true;
+    try{localStorage.setItem('gp_top_abuse_msg',topAbuseMsg)}catch(e){}
+    if(online){try{await fput('abuse_banner',{msg:topAbuseMsg,by:nick||uid,ts:Date.now()})}catch(e){}}
+    syncTopAbuseBanner();
+    setAm('Верхнее сообщение обновлено!',true);
+  };
+
   if($('agcoins'))$('agcoins').onclick=async function(){
     var addC=$('apt')?parseInt($('apt').value,10):NaN;
     var val=(!isNaN(addC)&&addC>0)?addC:250;
@@ -3069,23 +3266,10 @@ async function adminPanel(){
     var k=key();if(!k)return;
     var rawNick=$('an')?$('an').value.trim():k;
     var addC=$('apt')?parseInt($('apt').value,10):NaN;
-    var val=(!isNaN(addC)&&addC>0)?addC:100;
+    var val=(!isNaN(addC)&&addC>0)?addC:150;
     try{
-      if(online){
-        var cur=await fget('scores/'+k)||{nick:rawNick,owner:uid,b1:0,b2:0,b3:0,gold:false,coins:0};
-        var nextC=Math.max(0,Math.floor((cur.coins||0)+val));
-        cur.coins=nextC;
-        await fput('scores/'+k,cur);
-        if(nick&&nick.toLowerCase()===k){coins=nextC;saveCoins();hud()}
-      }else{
-        var b=getLoc();
-        var u=b[rawNick]||{b1:0,b2:0,b3:0,gold:false,coins:0};
-        u.coins=Math.max(0,Math.floor((u.coins||0)+val));
-        b[rawNick]=u;
-        try{localStorage.setItem('gp_board',JSON.stringify(b))}catch(e){}
-        if(nick&&nick.toLowerCase()===k){coins=u.coins;saveCoins();hud()}
-      }
-      setAm('Игроку '+k+' выдано +'+val+' 🪙!',true);
+      await giveCoinsToNick(k,rawNick,val);
+      setAm('Игроку '+rawNick+' выдано +'+val+' 🪙!',true);
     }catch(e){setAm('Ошибка при выдаче монет',false)}
   };
   if($('al'))$('al').onclick=async function(){
@@ -3101,74 +3285,36 @@ async function adminPanel(){
     var k=key();if(!k)return;
     var o={skins:{},vip:$('avip')?!!$('avip').checked:false},any=o.vip;
     document.querySelectorAll('.chk input[data-s]').forEach(function(c){if(c.checked){o.skins[c.dataset.s]=true;any=true}});
-    try{await fput('grants/'+k,any?o:null);await loadGr();setAm('Сохранено',true)}catch(e){setAm('Не удалось сохранить: нет прав админа',false)}
+    try{await fput('grants/'+k,any?o:null);await loadGr();setAm('Сохранено',true)}catch(e){setAm('Не удалось сохранить: проверь права в Firebase',false)}
   };
-  if($('agp'))$('agp').onclick=async function(){
-    var k=key();if(!k)return;
-    var addVal=$('apt')?parseInt($('apt').value,10):NaN;
-    if(isNaN(addVal)||addVal===0){setAm('Введи число очков в поле выше',false);return;}
-    try{var nv=await mutateScore(k,function(v){return Math.max(0,v+addVal)});setAm('Игроку '+k+' начислено '+addVal+' (итог: '+nv+')',true)}catch(e){setAm('Ошибка начисления очков',false)}
-  };
-  if($('asp'))$('asp').onclick=async function(){
-    var k=key();if(!k)return;
-    var setVal=$('apt')?parseInt($('apt').value,10):NaN;
-    if(isNaN(setVal)||setVal<0){setAm('Введи неотрицательное число очков',false);return;}
-    try{var nv=await mutateScore(k,function(){return setVal});setAm('Рекорд '+k+' теперь '+nv,true)}catch(e){setAm('Ошибка установки счёта',false)}
-  };
-  if($('azp'))$('azp').onclick=async function(){
-    var k=key();if(!k)return;
-    try{await mutateScore(k,function(){return 0});setAm('Рекорд '+k+' обнулён',true)}catch(e){setAm('Ошибка обнуления',false)}
-  };
-  if($('arp'))$('arp').onclick=async function(){
-    var k=key();if(!k)return;
-    if(!confirm('Сбросить пароль игроку '+k+'?'))return;
-    try{await fput('scores/'+k+'/pass','');setAm('Пароль игрока '+k+' сброшен',true)}catch(e){setAm('Не удалось сбросить пароль',false)}
-  };
-  if($('aallsk'))$('aallsk').onclick=function(){
-    document.querySelectorAll('.chk input[data-s]').forEach(function(c){c.checked=true});
-    if($('avip'))$('avip').checked=true;
-    setAm('Отмечены все скины и VIP — нажми «Выдать / сохранить»',true);
-  };
-  if($('aclsk'))$('aclsk').onclick=function(){
-    document.querySelectorAll('.chk input[data-s]').forEach(function(c){c.checked=false});
-    if($('avip'))$('avip').checked=false;
-    setAm('Сняты все галочки скинов и VIP',true);
-  };
-  if($('afullc'))$('afullc').onclick=function(){
-    hunger=100;clean=100;wetness=0;bathCap=false;lastCareTick=Date.now();saveCare();
-    if($('abar'))$('abar').classList.remove('show');
-    setAm('Сытость и чистота восстановлены до 100%',true);
-  };
-  if($('ahung0'))$('ahung0').onclick=function(){hunger=0;lastCareTick=Date.now();saveCare();setAm('Сытость 0%',true)};
-  if($('adir0'))$('adir0').onclick=function(){clean=1;lastCareTick=Date.now();saveCare();setAm('Чистота 1% (мухи и запах)',true)};
-  if($('aspawn0'))$('aspawn0').onclick=function(){spawnTreat(0);setAm('Добавлен 🥒 +50',true)};
-  if($('aspawn1'))$('aspawn1').onclick=function(){spawnTreat(1);setAm('Добавлен 🥕 супер-прыжок',true)};
-  if($('aspawn2'))$('aspawn2').onclick=function(){spawnTreat(2);setAm('Добавлен 🌿 щит',true)};
-  if($('aheli1'))$('aheli1').onclick=function(){
-    if(state!=='play')start();
-    heliActive=true;heliRentTimer=120;heliFarmAcc=0;air=true;vy=0;sfxHeliStart();syncHeliBtn();
-    setAm('Вертолёт запущен!',true);
-  };
-  if($('aheli0'))$('aheli0').onclick=function(){heliActive=false;syncHeliBtn();setAm('Вертолёт посажен',true)};
-  if($('amogall'))$('amogall').onclick=function(){
-    obs.forEach(function(o){o.sunk=true});
-    mogFlash=18;sfxMog();
-    setAm('Все препятствия могнуты!',true);
-  };
+
   if($('am67'))$('am67').onclick=function(){mode67=!mode67;if(mode67)clearOtherModes('67');syncModesUI();setAm('Режим 67: '+(mode67?'ВКЛ':'ВЫКЛ'),true)};
   if($('amgta'))$('amgta').onclick=function(){modeGta=!modeGta;if(modeGta)clearOtherModes('gta');syncModesUI();setAm('Режим GTA VI: '+(modeGta?'ВКЛ':'ВЫКЛ'),true)};
   if($('ambee'))$('ambee').onclick=function(){modeBee=!modeBee;if(modeBee)clearOtherModes('bee');syncModesUI();setAm('Режим Пчёлы: '+(modeBee?'ВКЛ':'ВЫКЛ'),true)};
   if($('ammog'))$('ammog').onclick=function(){modeMog=!modeMog;if(modeMog)clearOtherModes('mog');syncModesUI();setAm('Режим Могну: '+(modeMog?'ВКЛ':'ВЫКЛ'),true)};
   if($('amcandy'))$('amcandy').onclick=function(){modeCandy=!modeCandy;if(modeCandy)clearOtherModes('candy');syncModesUI();setAm('Сладкий мир: '+(modeCandy?'ВКЛ':'ВЫКЛ'),true)};
   if($('ampit'))$('ampit').onclick=function(){modePitbike=!modePitbike;if(modePitbike)clearOtherModes('pit');syncModesUI();setAm('Питбайк ДПС: '+(modePitbike?'ВКЛ':'ВЫКЛ'),true)};
-  if($('agth'))$('agth').onclick=function(){
-    var order=['night','sunset','day'];
-    gtaTheme=order[(order.indexOf(gtaTheme)+1)%order.length];
-    try{localStorage.setItem('gp_gta_theme',gtaTheme)}catch(e){}
-    if(!modeGta){modeGta=true;clearOtherModes('gta');syncModesUI()}
-    else syncGtaThemeUI();
-    setAm('Тема GTA VI: '+gtaTheme,true);
-  };
+
+  var grid=$('adm100grid');
+  if(grid){
+    all100.forEach(function(act,idx){
+      var btn=document.createElement('button');
+      btn.type='button';
+      btn.className='sec';
+      btn.textContent=act.t;
+      btn.onclick=async function(){
+        var rawNick=$('an')?$('an').value.trim():(nick||'David_admin');
+        var k=ok(rawNick)?rawNick.toLowerCase():(nick?nick.toLowerCase():'david_admin');
+        var val=$('apt')?parseInt($('apt').value,10):NaN;
+        try{
+          var resTxt=await act.fn(k,rawNick,val);
+          setAm(resTxt,true);
+        }catch(e){setAm('Ошибка выполнения #'+(idx+1),false)}
+      };
+      grid.appendChild(btn);
+    });
+  }
+
   if($('ad'))$('ad').onclick=async function(){
     var k=key();if(!k)return;
     if(!confirm('Удалить ник '+k+' из таблицы? Рекорды пропадут.'))return;
@@ -3289,13 +3435,19 @@ document.addEventListener('pointerdown',function(e){
 });
 window.addEventListener('beforeunload',function(){if(mpCode&&online&&uid){try{navigator.sendBeacon(CFG.databaseURL.replace(/\/$/,'')+'/rooms/'+mpCode+'/players/'+uid+'.json?auth='+(tok||''),JSON.stringify(null))}catch(e){}}});
 
-try{bg();drawPig()}catch(e){}
+try{bg();drawPig();syncTopAbuseBanner()}catch(e){}
 if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
 
 (async function(){
   try{
     if(CFG.apiKey&&CFG.databaseURL){try{await auth();online=true}catch(e){online=false}}
     await refreshAdminStatus();
+    if(online){
+      try{
+        var ab=await fget('abuse_banner');
+        if(ab&&ab.msg){topAbuseMsg=String(ab.msg);syncTopAbuseBanner()}
+      }catch(e){}
+    }
     if($('ln'))$('ln').textContent=online?'Ник закрепляется за устройством или паролем: можно играть и с телефона, и с ПК.':'Таблица пока локальная (только на этом устройстве).';
     loadLb();
     if(online)setInterval(loadLb,15000);
