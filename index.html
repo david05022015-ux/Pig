@@ -180,6 +180,8 @@ var CFG={
   databaseURL: 'https://pigg-73232-default-rtdb.firebaseio.com'
 };
 var SECRET_PASS='6767';
+var ADMIN_NICK='david_admin';
+var ADMIN_UID='J8YWwBy3eGUF1OGNvJADviqrdcA2';
 var online=false,tok=null,exp=0,isAdmin=false;
 var $=function(i){return document.getElementById(i)};
 var cv=$('c'),ctx=cv.getContext('2d'),W=800,H=520,GY=445;
@@ -189,6 +191,12 @@ var hunger=100,clean=100,lastCareTick=Date.now(),lastFeedAlert=0,careCause='';
 var wetness=0,bathCap=false;
 var mpCode=null,mpRole=null,mpSeed=0,mpPollTimer=0,mpSendTimer=0,mpPeer=null,mpInterpY=GY,mpInterpVy=0;
 var uiDragState={active:false,mode:null,lx:0,ly:0,yaw:0.65,pitch:0.22,autoRot:true,spraying:false,sx:190,sy:64,v3Key:'classic'};
+
+function isLocalOrNamedAdmin(){
+  if(uid&&uid===ADMIN_UID)return true;
+  if(nick&&String(nick).toLowerCase()===ADMIN_NICK)return true;
+  return false;
+}
 
 try{
   nick=localStorage.getItem('gp_nick');
@@ -206,6 +214,7 @@ try{
   bathCap=localStorage.getItem('gp_cap')==='1';
 }catch(e){}
 lbTab=diff;
+if(isLocalOrNamedAdmin())isAdmin=true;
 
 function isPigBlinking(nowMs,seedOffset){
   var cyc=((nowMs+(seedOffset||0))%4300);
@@ -2229,6 +2238,8 @@ async function logoutAccount(){
   bests={1:0,2:0,3:0};
   gold=false;
   skin='classic';
+  if(isLocalOrNamedAdmin())isAdmin=true;
+  else isAdmin=false;
   try{
     localStorage.removeItem('gp_nick');
     localStorage.removeItem('gp_accpass');
@@ -2251,7 +2262,7 @@ function loginPassScreen(n,d){
     try{localStorage.setItem('gp_accpass',p);localStorage.setItem('gp_nick',n)}catch(e){}
     var owners=d.owners||{};owners[uid]=true;
     try{await fput('scores/'+n.toLowerCase()+'/owners',owners)}catch(e){}
-    setRec(d);nick=n;await loadGr();ready();
+    setRec(d);nick=n;if(isLocalOrNamedAdmin())isAdmin=true;await loadGr();ready();
   };
   if(inp)inp.onkeydown=function(e){if(e.key==='Enter'&&$('lpok'))$('lpok').click()};
   if($('lpno'))$('lpno').onclick=function(){nick=null;nickScreen()};
@@ -2309,12 +2320,14 @@ function nickScreen(){
       loadLocal(n);
     }
     nick=n;try{localStorage.setItem('gp_nick',n)}catch(e){}
+    if(isLocalOrNamedAdmin())isAdmin=true;
     await loadGr();ready();
   };
 }
 
 function ready(){
   hideOverSlot();
+  if(isLocalOrNamedAdmin())isAdmin=true;
   state='ready';score=0;syncHeliBtn();stepCare();hud();bg();drawPig();
   var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
   [1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
@@ -2814,7 +2827,8 @@ if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
 (async function(){
   try{
     if(CFG.apiKey&&CFG.databaseURL){try{await auth();online=true}catch(e){online=false}}
-    if(online){try{isAdmin=(await fget('admins/'+uid))===true}catch(e){}}
+    isAdmin=isLocalOrNamedAdmin();
+    if(online&&uid){try{if((await fget('admins/'+uid))===true)isAdmin=true}catch(e){}}
     if($('ln'))$('ln').textContent=online?'Ник закрепляется за устройством или паролем: можно играть и с телефона, и с ПК.':'Таблица пока локальная (только на этом устройстве).';
     loadLb();
     if(online)setInterval(loadLb,15000);
@@ -2822,7 +2836,7 @@ if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
       if(online){
         try{
           var d=await fget('scores/'+nick.toLowerCase());
-          if(hasAccess(d)){setRec(d);if(state==='ready')ready()}
+          if(hasAccess(d)){setRec(d);isAdmin=isLocalOrNamedAdmin()||isAdmin;if(state==='ready')ready()}
           else{nick=null;nickScreen()}
         }catch(e){}
       }else{
