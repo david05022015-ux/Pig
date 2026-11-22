@@ -42,10 +42,10 @@ canvas{display:block;width:100%;height:auto}
 .fsbtn.on{border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,.45)}
 .helibtn{position:absolute;right:12px;bottom:52px;z-index:5;display:none;width:auto;margin:0;padding:7px 12px;border-radius:999px;background:linear-gradient(90deg,#ea580c,#eab308);color:#fff;border:1px solid #fef08a;font-size:12px;font-weight:800;box-shadow:0 4px 14px rgba(234,88,12,.5)}
 .helibtn.show{display:inline-flex;align-items:center;gap:4px}
-.doom-full{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;flex-direction:column;background:#050507;transition:background .15s;user-select:none;-webkit-user-select:none}
+.doom-full{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;flex-direction:column;padding:24px;text-align:center;background:#050507;transition:background .15s;user-select:none;-webkit-user-select:none}
 .doom-full.show{display:flex}
 .doom-full.flash-red{background:#991b1b}
-.doom-full span{font-size:clamp(34px,9vw,64px);font-weight:900;letter-spacing:2px;color:#ef4444;text-shadow:0 0 26px rgba(239,68,68,.95),0 0 56px rgba(185,28,28,.85)}
+.doom-full span{font-size:clamp(26px,7vw,54px);line-height:1.2;font-weight:900;letter-spacing:1.5px;color:#ef4444;text-shadow:0 0 26px rgba(239,68,68,.95),0 0 56px rgba(185,28,28,.85)}
 .menu-slot,.over-slot{display:none;margin-top:12px}
 .menu-slot.show,.over-slot.show{display:block}
 .menu-slot .box,.over-slot .box{margin:0 auto;max-width:100%;text-align:center}
@@ -109,7 +109,7 @@ li.me{color:var(--ac);font-weight:600}
 </style>
 </head>
 <body>
-<div class="doom-full" id="doomfull"><span>МОЛОДЕЦ..</span></div>
+<div class="doom-full" id="doomfull"><span id="doomtext">МОЛОДЕЦ..</span></div>
 <div class="w">
 <h1>Морская свинка: беги и прыгай</h1>
 <div class="alertbar" id="abar"><span id="atxt">Покорми свинку</span><button type="button" id="afix">Еда и уход</button></div>
@@ -605,12 +605,20 @@ for(var i=0;i<5;i++)clouds.push({x:rnd(0,W),y:rnd(25,130),s:rnd(.6,1.2)});
 for(var i=0;i<7;i++)pigeons.push({x:rnd(0,W),y:rnd(32,148),s:rnd(.62,1.05),sp:rnd(.65,1.35),ph:rnd(0,6.28),col:Math.random()<.65?'#94a3b8':'#cbd5e1'});
 for(var i=0;i<45;i++)tufts.push({x:rnd(0,W),y:rnd(GY+5,H-6)});
 
+function getDoomPhrase(timer){
+  if(timer<150)return 'МОЛОДЕЦ..';
+  if(timer<300)return 'ТЫ РАЗБИЛ СВИНКУ';
+  if(timer<450)return 'А ВЕДЬ ОНА ТОЖЕ ЖИВОТНОЕ';
+  return 'И ЧУВСТВУЕТ БОЛЬ..';
+}
+
 function syncDoomFullUI(){
-  var df=$('doomfull');
+  var df=$('doomfull'),dtEl=$('doomtext');
   if(!df)return;
   if(doomPhase>0){
     df.classList.add('show');
     df.classList.toggle('flash-red',doomPhase===1&&doomRed>0.35);
+    if(dtEl)dtEl.textContent=getDoomPhrase(doomTimer);
   }else{
     df.classList.remove('show','flash-red');
   }
@@ -1284,9 +1292,9 @@ function loop(now){
 
   if(doomPhase>0){
     doomTimer+=dt;
-    if(doomTimer<22){
+    if(doomTimer<25){
       doomPhase=1;
-      doomRed=Math.max(0.4,0.85-(doomTimer/22)*0.45);
+      doomRed=Math.max(0.4,0.85-(doomTimer/25)*0.45);
       doomBlack=0;
     }else{
       doomPhase=2;
@@ -1294,7 +1302,7 @@ function loop(now){
       doomBlack=1;
     }
     syncDoomFullUI();
-    if(doomTimer>=120){
+    if(doomTimer>=600){
       doomPhase=0;
       syncDoomFullUI();
       return over(true);
