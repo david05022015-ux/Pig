@@ -142,7 +142,7 @@ li.me{color:var(--ac);font-weight:600}
 <button type="button" class="mbtn" id="mb" title="Музыка и звуки">🔊</button>
 <button type="button" class="fsbtn" id="fsb" title="На весь экран">⛶</button>
 </div>
-<p class="note">Прыжок: пробел, стрелка вверх или касание экрана. Вкусняшки: 🥒 +50, 🥕 +100 и супер-прыжок, 🌿 +200 и щит, 🪙 монеты на еду и мытьё. Не забывай кормить и мыть свинку!</p>
+<p class="note">Прыжок: пробел, стрелка вверх или касание экрана. Вкусняшки: 🥒 +50, 🥕 +100 и супер-прыжок, 🌿 +200 и щит. Не забывай кормить и мыть свинку!</p>
 <div class="menu-slot" id="menuslot"></div>
 <div class="over-slot" id="overslot"></div>
 <div class="card heli-bar" id="helibox">
@@ -182,17 +182,11 @@ var online=false,tok=null,exp=0,isAdmin=false;
 var $=function(i){return document.getElementById(i)};
 var cv=$('c'),ctx=cv.getContext('2d'),W=800,H=520,GY=445;
 var ccv=$('cc'),cctx=ccv?ccv.getContext('2d'):null;
-var uid=null,nick=null,accPass='',state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},coins=100,gold=false,skin='classic',banner=0,GRALL={},passAuth=false,mode67=false,modeGta=false,modeBee=false,modeMog=false,gtaTheme='night',muted=false,fullSc=false;
+var uid=null,nick=null,accPass='',state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},gold=false,skin='classic',banner=0,GRALL={},passAuth=false,mode67=false,modeGta=false,modeBee=false,modeMog=false,gtaTheme='night',muted=false,fullSc=false;
 var hunger=100,clean=100,lastCareTick=Date.now(),lastFeedAlert=0,careCause='';
 var wetness=0,bathCap=false;
 var mpCode=null,mpRole=null,mpSeed=0,mpPollTimer=0,mpSendTimer=0,mpPeer=null,mpInterpY=GY,mpInterpVy=0;
 var uiDragState={active:false,mode:null,lx:0,ly:0,yaw:0.65,pitch:0.22,autoRot:true,spraying:false,sx:190,sy:64,v3Key:'classic'};
-
-function esc(s){
-  return String(s==null?'':s).replace(/[&<>"']/g,function(ch){
-    return ch==='&'?'&amp;':(ch==='<'?'&lt;':(ch==='>'?'&gt;':(ch==='"'?'&quot;':'&#39;')));
-  });
-}
 
 try{
   nick=localStorage.getItem('gp_nick');
@@ -203,7 +197,6 @@ try{
   muted=localStorage.getItem('gp_mute')==='1';
   var gth=localStorage.getItem('gp_gta_theme');
   if(gth==='night'||gth==='sunset'||gth==='day')gtaTheme=gth;
-  var sck=localStorage.getItem('gp_coins');if(sck!==null&&!isNaN(+sck))coins=Math.max(0,Math.floor(+sck));
   var sh=localStorage.getItem('gp_hunger');if(sh!==null&&!isNaN(+sh))hunger=Math.max(0,Math.min(100,+sh));
   var sc2=localStorage.getItem('gp_clean');if(sc2!==null&&!isNaN(+sc2))clean=Math.max(0,Math.min(100,+sc2));
   var stt=localStorage.getItem('gp_care_ts');if(stt&&!isNaN(+stt))lastCareTick=+stt;
@@ -211,11 +204,6 @@ try{
   bathCap=localStorage.getItem('gp_cap')==='1';
 }catch(e){}
 lbTab=diff;
-
-function saveCoins(){
-  coins=Math.max(0,Math.floor(coins));
-  try{localStorage.setItem('gp_coins',String(coins))}catch(e){}
-}
 
 function isPigBlinking(nowMs,seedOffset){
   var cyc=((nowMs+(seedOffset||0))%4300);
@@ -354,7 +342,6 @@ function saveCare(){
     localStorage.setItem('gp_care_ts',String(lastCareTick));
     localStorage.setItem('gp_wet',String(Math.round(wetness*100)/100));
     localStorage.setItem('gp_cap',bathCap?'1':'0');
-    saveCoins();
   }catch(e){}
 }
 
@@ -380,7 +367,7 @@ function stepCare(){
     careCause=hunger<=0?'Свинка умерла от голода — ты забыл её покормить!':'Свинка не выдержала грязи и мух!';
     hunger=100;clean=100;saveCare();
     if(state!=='play'&&state!=='nick'){
-      ov('<div class="box"><h2>Свинка погибла</h2><p>'+esc(careCause)+'</p><button id="cdok">Воскресить</button></div>');
+      ov('<div class="box"><h2>Свинка погибла</h2><p>'+careCause+'</p><button id="cdok">Воскресить</button></div>');
       if($('cdok'))$('cdok').onclick=function(){careCause='';ready()};
     }
   }
@@ -499,7 +486,6 @@ function sfxShieldBreak(){tone(480,.22,'sawtooth',.13,130)}
 function sfxHeliStart(){tone(160,.25,'sawtooth',.11,420);setTimeout(function(){tone(240,.2,'triangle',.1,560)},110)}
 function sfxHeliBoom(){tone(140,.55,'sawtooth',.18,32);setTimeout(function(){tone(90,.6,'square',.14,26)},90)}
 function sfxSplash(){tone(420+Math.random()*280,.07,'sine',.035,760)}
-function sfxCoin(){tone(880,.08,'sine',.1,1320)}
 function sfxTreat(t){
   if(t===0){tone(587.33,.1,'sine',.1,880)}
   else if(t===1){tone(523.25,.09,'triangle',.11);setTimeout(function(){tone(783.99,.14,'triangle',.11)},65)}
@@ -526,16 +512,15 @@ oreo:{n:'Орео',tag:'ЛИМИТКА',d:'Только по выдаче адм
 alien:{n:'Инопланетянин',tag:'ЛИМИТКА',d:'200 000 очков или выдача админа · парит на тарелке',need:200000,a0:'#9eff6e',a1:'#45c938',a2:'#1f7a24',bel:'rgba(218,255,205,.9)',pat:'#c7ff9e',ear:'#1d6e22',ei:'#72f295',fd:'rgba(10,65,20,.25)',fl:'rgba(210,255,190,.42)',lg:'#2b8a30',ft:'#85f279',ufo:true}
 };
 var SPR={};
-var trackRngState=1;
-function seedTrackRnd(s){trackRngState=(Math.abs(s||1)%2147483646)+1}
-function trackRnd(a,b){
+var rngState=1;
+function seedRnd(s){rngState=(Math.abs(s||1)%2147483646)+1}
+function rnd(a,b){
   if(mpCode&&mpSeed){
-    trackRngState=(trackRngState*16807)%2147483647;
-    return a+(trackRngState/2147483647)*(b-a);
+    rngState=(rngState*16807)%2147483647;
+    return a+(rngState/2147483647)*(b-a);
   }
   return a+Math.random()*(b-a);
 }
-function rnd(a,b){return a+Math.random()*(b-a)}
 function drawUfo(g,cx,cy,sc){
   g.save();g.translate(cx,cy);g.scale(sc,sc);
   var bm=g.createLinearGradient(0,6,0,26);
@@ -798,7 +783,7 @@ function myGR(){return(nick&&GRALL[nick.toLowerCase()])||{}}
 function owned(k){if(!SK[k])return false;if(SK[k].free)return true;var g=myGR();if(g.skins&&g.skins[k])return true;if(SK[k].adminOnly)return isAdmin;if(k==='gold')return gold;return Math.max(bests[1],bests[2],bests[3])>=SK[k].need}
 function curSkin(){if(modeGta)return'gta6';return owned(skin)?skin:'classic'}
 
-var px=115,py=GY,vy=0,air=false,paused=false,ph=0,obs=[],treats=[],coinItems=[],pops=[],parts=[],spd=5,dist=0,bonus=0,score=0,cd=0,tcd=180,ccd=210,hiJump=0,shield=0,joyTimer=0,scared=false,banner=0,mogFlash=0,t0=0,clouds=[],pigeons=[],tufts=[],L=LV[2];
+var px=115,py=GY,vy=0,air=false,paused=false,ph=0,obs=[],treats=[],pops=[],parts=[],spd=5,dist=0,bonus=0,score=0,cd=0,tcd=180,hiJump=0,shield=0,joyTimer=0,scared=false,banner=0,mogFlash=0,t0=0,clouds=[],pigeons=[],tufts=[],L=LV[2];
 var heliActive=false,heliRentTimer=0,heliFarmAcc=0,heliRotor=0,doomPhase=0,doomTimer=0,doomRed=0,doomBlack=0;
 
 for(var i=0;i<6;i++)clouds.push({x:rnd(0,W),y:rnd(30,170),s:rnd(.65,1.25)});
@@ -964,7 +949,7 @@ function syncModesUI(){
 function askSecretPass(title,desc,onSuccess){
   var wasPlay=(state==='play');
   if(wasPlay)paused=true;
-  ov('<div class="box"><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p><input type="password" id="fpi" inputmode="numeric" maxlength="12" placeholder="••••"><div class="msg" id="fpm"></div><button id="fpok">Включить</button><button class="sec" id="fpno">Отмена</button></div>');
+  ov('<div class="box"><h2>'+title+'</h2><p>'+desc+'</p><input type="password" id="fpi" inputmode="numeric" maxlength="12" placeholder="••••"><div class="msg" id="fpm"></div><button id="fpok">Включить</button><button class="sec" id="fpno">Отмена</button></div>');
   var inp=$('fpi');if(inp)setTimeout(function(){inp.focus()},50);
   function closePass(ok){
     closeModalOv();
@@ -1129,7 +1114,7 @@ function mpLobbyScreen(){
 
 function showWaitingRoom(){
   state='lobby';
-  ov('<div class="box"><h2>Комната создана</h2><p>Продиктуй этот код другу:</p><div class="room-code">'+esc(mpCode)+'</div><p id="mproomst">Ждём второго игрока по коду '+esc(mpCode)+'...</p><button id="mpstartnow">Начать сразу (1 на 1)</button><button class="sec" id="mpcancel">Отмена</button></div>');
+  ov('<div class="box"><h2>Комната создана</h2><p>Продиктуй этот код другу:</p><div class="room-code">'+mpCode+'</div><p id="mproomst">Ждём второго игрока по коду '+mpCode+'...</p><button id="mpstartnow">Начать сразу (1 на 1)</button><button class="sec" id="mpcancel">Отмена</button></div>');
   startMpLoops();
   if($('mpstartnow'))$('mpstartnow').onclick=async function(){
     stopMpLoops();
@@ -1141,13 +1126,13 @@ function showWaitingRoom(){
 
 function start(forcedSeed){
   hideMenuSlot();hideOverSlot();closeModalOv();
-  initAudio();L=LV[diff]||LV[2];obs=[];treats=[];coinItems=[];pops=[];parts=[];
+  initAudio();L=LV[diff]||LV[2];obs=[];treats=[];pops=[];parts=[];
   if(mpCode){
     mpSeed=forcedSeed||mpSeed||123456;
-    seedTrackRnd(mpSeed);
+    seedRnd(mpSeed);
   }
   spd=L.s0;dist=0;bonus=0;score=0;py=GY;vy=0;air=false;paused=false;mpInterpY=GY;mpInterpVy=0;
-  cd=95;tcd=150;ccd=210;hiJump=0;shield=0;joyTimer=0;scared=false;banner=0;mogFlash=0;
+  cd=95;tcd=150;hiJump=0;shield=0;joyTimer=0;scared=false;banner=0;mogFlash=0;
   heliActive=false;heliRentTimer=0;heliFarmAcc=0;heliRotor=0;doomPhase=0;doomTimer=0;doomRed=0;doomBlack=0;
   stopCartoon();
   syncDoomFullUI();
@@ -1155,28 +1140,13 @@ function start(forcedSeed){
   if(mpCode){pushMpState(true);startMpLoops()}
   t0=performance.now();requestAnimationFrame(loop);
 }
-function mkObs(x){var k=Math.floor(trackRnd(0,3)),w=trackRnd(34,48),h=k===1?trackRnd(34,46):trackRnd(38,L.hm);return{x:x,w:w,h:h,k:k,sink:0,sunk:false}}
+function mkObs(x){var k=Math.floor(rnd(0,3)),w=rnd(34,48),h=k===1?rnd(34,46):rnd(38,L.hm);return{x:x,w:w,h:h,k:k,sink:0,sunk:false}}
 function spawn(){var o=mkObs(W+25),ex=0;obs.push(o);
-  if(trackRnd(0,1)<L.dbl){var o2=mkObs(o.x+o.w+trackRnd(75,120));obs.push(o2);ex=o2.x-o.x+o2.w}return ex;}
+  if(Math.random()<L.dbl){var o2=mkObs(o.x+o.w+rnd(75,120));obs.push(o2);ex=o2.x-o.x+o2.w}return ex;}
 function spawnTreat(forcedTp){
-  var r=trackRnd(0,1),tp=(typeof forcedTp==='number')?forcedTp:(r<.52?0:(r<.84?1:2));
-  var y=GY-trackRnd(55,180);
-  treats.push({x:W+35,y:y,tp:tp,ph:trackRnd(0,6)});
-}
-function spawnCoin(){
-  var y=GY-trackRnd(48,165);
-  coinItems.push({x:W+35,y:y,ph:trackRnd(0,6.28),val:15});
-}
-function drawCoinItem(cn){
-  var bob=Math.sin(performance.now()/160+cn.ph)*4.5,y=cn.y+bob;
-  ctx.save();ctx.translate(cn.x,y);
-  ctx.fillStyle='rgba(250,204,21,.28)';ctx.beginPath();ctx.arc(0,0,17,0,7);ctx.fill();
-  ctx.fillStyle='#facc15';ctx.strokeStyle='#b45309';ctx.lineWidth=1.6;
-  ctx.beginPath();ctx.arc(0,0,11,0,7);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#fef08a';ctx.beginPath();ctx.arc(-3,-3,3.2,0,7);ctx.fill();
-  ctx.fillStyle='#92400e';ctx.font='bold 10px system-ui,sans-serif';ctx.textAlign='center';
-  ctx.fillText('₽',0,3.5);
-  ctx.restore();
+  var r=Math.random(),tp=(typeof forcedTp==='number')?forcedTp:(r<.52?0:(r<.84?1:2));
+  var y=GY-rnd(55,180);
+  treats.push({x:W+35,y:y,tp:tp,ph:rnd(0,6)});
 }
 function addBurst(x,y,col,n){
   for(var i=0;i<(n||12);i++){
@@ -1767,7 +1737,7 @@ function triggerHeliDoom(){
 }
 
 function hud(){
-  if($('sc'))$('sc').textContent=score+' · 🪙 '+coins;
+  if($('sc'))$('sc').textContent=score;
   if($('bs'))$('bs').textContent=(LV[diff]?LV[diff].n:'Средний')+' · рекорд: '+(bests[diff]||0);
 }
 
@@ -1866,9 +1836,8 @@ function loop(now){
     mStep++;
     mTimer=mode67?8.5:Math.max(6.5,12.5-spd*.35);
   }
-  cd-=dt;if(cd<=0){var ex=spawn();cd=(trackRnd(L.g0,L.g1)+ex)/Math.max(2.5,L.s0)}
-  tcd-=dt;if(tcd<=0){spawnTreat();tcd=trackRnd(240,420)}
-  ccd-=dt;if(ccd<=0){spawnCoin();ccd=trackRnd(190,340)}
+  cd-=dt;if(cd<=0){var ex=spawn();cd=(rnd(L.g0,L.g1)+ex)/Math.max(2.5,L.s0)}
+  tcd-=dt;if(tcd<=0){spawnTreat();tcd=rnd(240,420)}
   clouds.forEach(function(c){c.x-=(modeGta?spd*.4:.3)*dt;if(c.x<-80)c.x=W+60});
   pigeons.forEach(function(b){
     b.x-=(b.sp+spd*.12)*dt;
@@ -1877,17 +1846,6 @@ function loop(now){
   });
   tufts.forEach(function(t){t.x-=spd*dt;if(t.x<-5){t.x=W+5;t.y=rnd(GY+6,H-8)}});
   if(diff===3&&score>=1500&&!gold){gold=true;skin='gold';try{localStorage.setItem('gp_skin',skin)}catch(e){}sfxWin();banner=260;if(bests[3]<score)bests[3]=score;save()}
-
-  for(var ci=coinItems.length-1;ci>=0;ci--){
-    var cn=coinItems[ci];cn.x-=spd*dt;
-    if(cn.x<-30){coinItems.splice(ci,1);continue}
-    if(Math.abs(px-cn.x)<54&&Math.abs((py-36)-cn.y)<46){
-      coins+=(cn.val||15);saveCoins();sfxCoin();joyTimer=55;
-      addBurst(cn.x,cn.y,'#facc15',10);
-      pops.push({x:cn.x,y:cn.y-10,tx:'+'+(cn.val||15)+' 🪙',c:'#eab308',l:42});
-      coinItems.splice(ci,1);
-    }
-  }
 
   for(var ti=treats.length-1;ti>=0;ti--){
     var tr=treats[ti];tr.x-=spd*dt;
@@ -1935,7 +1893,7 @@ function loop(now){
     }
   }
   if(!scared&&!heliActive&&modeGta&&Math.min(6,1+Math.floor(score/250))>=5&&Math.floor(now/450)%2===0)scared=true;
-  bg();obs.forEach(drawObs);treats.forEach(drawTreat);coinItems.forEach(drawCoinItem);drawPeerPig(dt);drawPig();drawEffects();
+  bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPeerPig(dt);drawPig();drawEffects();
   if(banner>0){banner-=dt;ctx.fillStyle='#b8860b';ctx.font='bold 24px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('Золотая свинка открыта!',W/2,115);ctx.textAlign='left'}
   syncHeliBtn();
   hud();requestAnimationFrame(loop);
@@ -1945,21 +1903,18 @@ function ownedMap(){var m={};Object.keys(SK).forEach(function(k){m[k]=owned(k)})
 function over(fromHeliBoom){
   heliActive=false;doomPhase=0;syncDoomFullUI();syncHeliBtn();
   if(!fromHeliBoom)sfxHit();
-  state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);coinItems.forEach(drawCoinItem);drawPeerPig(1);drawPig();drawEffects();
-  var earnedCoins=Math.max(5,Math.floor(score/80));
-  coins+=earnedCoins;saveCoins();
-  var nb=score>bests[diff];if(nb){bests[diff]=score}save();hud();
+  state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPeerPig(1);drawPig();drawEffects();
+  var nb=score>bests[diff];if(nb){bests[diff]=score;save()}hud();
   if(mpCode){pushMpState(false);stopMpLoops()}
   var duelLine='';
   if(mpCode&&mpPeer){
     var pSc=mpPeer.score||0;
-    var pName=esc(mpPeer.nick||'Друг');
-    if(score>pSc){coins+=25;saveCoins();duelLine='<p style="color:#16a34a;font-weight:800">🏆 Победа в дуэли! Ты '+score+' : '+pSc+' '+pName+' (+25 🪙)</p>'}
-    else if(score<pSc)duelLine='<p style="color:#ef4444;font-weight:800">💥 Поражение в дуэли: ты '+score+' : '+pSc+' '+pName+'</p>';
+    if(score>pSc)duelLine='<p style="color:#16a34a;font-weight:800">🏆 Победа в дуэли! Ты '+score+' : '+pSc+' '+(mpPeer.nick||'Друг')+'</p>';
+    else if(score<pSc)duelLine='<p style="color:#ef4444;font-weight:800">💥 Поражение в дуэли: ты '+score+' : '+pSc+' '+(mpPeer.nick||'Друг')+'</p>';
     else duelLine='<p style="font-weight:800">🤝 Ничья в дуэли: '+score+' : '+pSc+'</p>';
   }
   var nw=Object.keys(SK).filter(function(k){return owned(k)&&!before[k]}).map(function(k){return SK[k].n});
-  showOverSlot('<div class="box"><h2>'+(fromHeliBoom?'МОЛОДЕЦ..':(modeGta?'ПОТРАЧЕНО':'Игра окончена'))+'</h2>'+duelLine+'<p>'+esc(LV[diff].n)+': '+score+' очков · +'+earnedCoins+' 🪙 (всего: '+coins+' 🪙)'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+esc(nw.join(', '))+'.</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">'+(mpCode?'Реванш в комнате':'Ещё раз')+'</button><div class="lr"><button class="sec" id="lv">'+(mpCode?'Выйти из дуэли':'Сложность')+'</button><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button></div></div>');
+  showOverSlot('<div class="box"><h2>'+(fromHeliBoom?'МОЛОДЕЦ..':(modeGta?'ПОТРАЧЕНО':'Игра окончена'))+'</h2>'+duelLine+'<p>'+LV[diff].n+': '+score+' очков'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+nw.join(', ')+'. Загляни в магазин!</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">'+(mpCode?'Реванш в комнате':'Ещё раз')+'</button><div class="lr"><button class="sec" id="lv">'+(mpCode?'Выйти из дуэли':'Сложность')+'</button><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button></div></div>');
   if($('go'))$('go').onclick=function(){start(mpSeed)};
   if($('lv'))$('lv').onclick=async function(){hideOverSlot();if(mpCode)await leaveMpRoom();ready()};
   if($('shp'))$('shp').onclick=function(){hideOverSlot();shop()};
@@ -2018,7 +1973,7 @@ function bathScreen(){
     wetness=0;saveCare();sfxWin();
   };
   if($('bdone'))$('bdone').onclick=function(){
-    saveCare();save();
+    saveCare();
     if($('abar')&&hunger>35)$('abar').classList.remove('show');
     careShopScreen();
   };
@@ -2163,28 +2118,28 @@ function bathScreen(){
 }
 
 var FOODS=[
-  {id:'cuke',n:'🥒 Огурец',p:25,h:25,c:-4},
-  {id:'carrot',n:'🥕 Сочная морковка',p:50,h:45,c:-6},
-  {id:'dill',n:'🌿 Золотой укроп',p:90,h:70,c:-8},
-  {id:'banquet',n:'🥗 Праздничный микс',p:150,h:100,c:-10}
+  {id:'cuke',n:'🥒 Огурец',p:50,h:25,c:-4},
+  {id:'carrot',n:'🥕 Сочная морковка',p:100,h:45,c:-6},
+  {id:'dill',n:'🌿 Золотой укроп',p:180,h:70,c:-8},
+  {id:'banquet',n:'🥗 Праздничный микс',p:300,h:100,c:-10}
 ];
 function careShopScreen(){
   hideMenuSlot();hideOverSlot();
-  state='care';stepCare();hud();
+  state='care';stepCare();
   var hCol=hunger>40?'#22c55e':(hunger>18?'#f59e0b':'#ef4444');
   var clColor=clean>45?'#38bdf8':(clean>20?'#f59e0b':'#84cc16');
   var statusTxt=clean<20?'Свинка жутко воняет, вокруг роятся мухи!':(clean<45?'Свинка пачкается, пора искупать!':(hunger<25?'Свинка голодная — срочно покорми!':'Свинка в норме'));
-  var html='<div class="box"><h2>Еда и уход</h2><p>Баланс: <b>'+coins+' 🪙</b> · '+esc(statusTxt)+'</p>';
+  var html='<div class="box"><h2>Еда и уход</h2><p>Рекорд ('+LV[diff].n+'): '+bests[diff]+' · '+statusTxt+'</p>';
   html+='<div class="stbar">';
   html+='<div class="strow"><div class="sthead"><span>🍖 Сытость</span><span>'+Math.round(hunger)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(hunger)+'%;background:'+hCol+'"></div></div></div>';
   html+='<div class="strow"><div class="sthead"><span>🛁 Чистота</span><span>'+Math.round(clean)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(clean)+'%;background:'+clColor+'"></div></div></div>';
   html+='</div>';
   FOODS.forEach(function(f){
     var cost=isAdmin?0:f.p;
-    html+='<button class="dbtn" data-f="'+f.id+'"><span>'+esc(f.n)+' <small>+'+f.h+' сытости</small></span><small>'+(cost===0?'БЕСПЛАТНО':cost+' 🪙')+'</small></button>';
+    html+='<button class="dbtn" data-f="'+f.id+'"><span>'+f.n+' <small>+'+f.h+' сытости</small></span><small>'+(cost===0?'БЕСПЛАТНО':cost+' очк.')+'</small></button>';
   });
-  var washCost=isAdmin?0:35;
-  html+='<button id="wsh">🛁 Искупать свинку ('+(washCost===0?'БЕСПЛАТНО':washCost+' 🪙')+')</button>';
+  var washCost=isAdmin?0:60;
+  html+='<button id="wsh">🛁 Искупать свинку ('+(washCost===0?'БЕСПЛАТНО':washCost+' очк.')+')</button>';
   html+='<button class="sec" id="ntf">🔔 Включить уведомления «Покорми свинку»</button>';
   html+='<div class="msg" id="cm"></div><button class="sec" id="cbk">Назад</button></div>';
   ov(html);
@@ -2193,18 +2148,18 @@ function careShopScreen(){
       var it=FOODS.find(function(x){return x.id===b.dataset.f});
       if(!it)return;
       var cost=isAdmin?0:it.p;
-      if(coins<cost){if($('cm'))$('cm').textContent='Не хватает монет (нужно '+cost+' 🪙, есть '+coins+' 🪙)';return;}
-      if(!isAdmin){coins-=cost;saveCoins()}
+      if(bests[diff]<cost){if($('cm'))$('cm').textContent='Не хватает очков в режиме «'+LV[diff].n+'»';return;}
+      if(!isAdmin){bests[diff]-=cost;save()}
       hunger=Math.min(100,hunger+it.h);
       clean=Math.max(0,clean+it.c);
-      joyTimer=80;lastCareTick=Date.now();saveCare();save();hud();sfxTreat(1);
+      joyTimer=80;lastCareTick=Date.now();saveCare();sfxTreat(1);
       careShopScreen();
     };
   });
   if($('wsh'))$('wsh').onclick=function(){
-    var cost=isAdmin?0:35;
-    if(coins<cost){if($('cm'))$('cm').textContent='Не хватает монет (нужно '+cost+' 🪙, есть '+coins+' 🪙)';return;}
-    if(!isAdmin){coins-=cost;saveCoins();save();hud()}
+    var cost=isAdmin?0:60;
+    if(bests[diff]<cost){if($('cm'))$('cm').textContent='Не хватает очков в режиме «'+LV[diff].n+'»';return;}
+    if(!isAdmin){bests[diff]-=cost;save()}
     bathScreen();
   };
   if($('ntf'))$('ntf').onclick=async function(){
@@ -2217,7 +2172,7 @@ function careShopScreen(){
   if($('cbk'))$('cbk').onclick=function(){ready()};
 }
 
-function setRec(d){if(!d)return;bests={1:d.b1||0,2:d.b2||d.best||0,3:d.b3||0};gold=d.gold===true;if(typeof d.coins==='number'&&!isNaN(d.coins))coins=Math.max(coins,Math.floor(d.coins));saveCoins();if(d.pass)accPass=d.pass}
+function setRec(d){if(!d)return;bests={1:d.b1||0,2:d.b2||d.best||0,3:d.b3||0};gold=d.gold===true;if(d.pass)accPass=d.pass}
 function hasAccess(d){
   if(!d)return false;
   if(d.owner===uid)return true;
@@ -2256,7 +2211,7 @@ async function logoutAccount(){
 
 function loginPassScreen(n,d){
   state='loginpass';
-  ov('<div class="box"><h2>Вход в аккаунт '+esc(n)+'</h2><p>Ник уже зарегистрирован. Введи пароль от этого ника, чтобы играть на этом устройстве:</p><input type="password" id="lpi" maxlength="20" placeholder="Пароль"><div class="msg" id="lpm"></div><button id="lpok">Войти</button><button class="sec" id="lpno">Другой ник</button></div>');
+  ov('<div class="box"><h2>Вход в аккаунт '+n+'</h2><p>Ник уже зарегистрирован. Введи пароль от этого ника, чтобы играть на этом устройстве:</p><input type="password" id="lpi" maxlength="20" placeholder="Пароль"><div class="msg" id="lpm"></div><button id="lpok">Войти</button><button class="sec" id="lpno">Другой ник</button></div>');
   var inp=$('lpi');if(inp)setTimeout(function(){inp.focus()},50);
   if($('lpok'))$('lpok').onclick=async function(){
     var p=inp?inp.value.trim():'';
@@ -2275,7 +2230,7 @@ function loginPassScreen(n,d){
 
 function passSettingsScreen(){
   state='passset';
-  ov('<div class="box"><h2>Пароль для входа</h2><p>Задай пароль, чтобы заходить под ником <b>'+esc(nick)+'</b> на ПК или другом телефоне:</p><input type="text" id="psi" maxlength="20" autocomplete="off" placeholder="Минимум 4 символа" value="'+esc(accPass||'')+'"><div class="msg" id="psm"></div><button id="psok">Сохранить пароль</button><button class="sec" id="psbk">Назад</button></div>');
+  ov('<div class="box"><h2>Пароль для входа</h2><p>Задай пароль, чтобы заходить под ником <b>'+nick+'</b> на ПК или другом телефоне:</p><input type="text" id="psi" maxlength="20" autocomplete="off" placeholder="Минимум 4 символа" value="'+(accPass||'')+'"><div class="msg" id="psm"></div><button id="psok">Сохранить пароль</button><button class="sec" id="psbk">Назад</button></div>');
   var inp=$('psi');if(inp)setTimeout(function(){inp.focus()},50);
   if($('psok'))$('psok').onclick=async function(){
     var p=inp?inp.value.trim():'';
@@ -2317,7 +2272,7 @@ function nickScreen(){
             var ow=d.owners||{};ow[uid]=true;try{await fput('scores/'+n.toLowerCase()+'/owners',ow)}catch(ex){}
           }
         }else{
-          await fput('scores/'+n.toLowerCase(),{nick:n,owner:uid,b1:0,b2:0,b3:0,gold:false,coins:coins,pass:''});
+          await fput('scores/'+n.toLowerCase(),{nick:n,owner:uid,b1:0,b2:0,b3:0,gold:false,pass:''});
           setRec({});
         }
       }catch(e){if(m)m.textContent='Не удалось проверить ник, попробуй ещё раз';return;}
@@ -2332,8 +2287,8 @@ function nickScreen(){
 function ready(){
   hideOverSlot();
   state='ready';score=0;syncHeliBtn();stepCare();hud();bg();drawPig();
-  var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Баланс: <b>'+coins+' 🪙</b> · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
-  [1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+esc(LV[k].n)+'</span><small>рекорд '+bests[k]+'</small></button>'});
+  var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
+  [1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
   html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><button class="sec v3btn" id="mpbtn">⚔️ Дуэль 1 на 1 (по сети)</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
   if(online)html+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
   html+='</div>';
@@ -2360,7 +2315,7 @@ function view3D(initKey){
   html+='<div class="v3wrap" id="v3w"><canvas id="v3c" width="360" height="270"></canvas></div>';
   html+='<div class="v3pills">';
   Object.keys(SK).forEach(function(k){
-    html+='<button class="sec'+(k===uiDragState.v3Key?' on':'')+'" data-v3k="'+k+'">'+esc(SK[k].n)+'</button>';
+    html+='<button class="sec'+(k===uiDragState.v3Key?' on':'')+'" data-v3k="'+k+'">'+SK[k].n+'</button>';
   });
   html+='</div>';
   html+='<div class="lr"><button class="sec" id="v3rot">'+(uiDragState.autoRot?'Пауза вращения':'Крутить 3D')+'</button><button class="sec" id="v3belly">Вид на пузо</button></div>';
@@ -2547,10 +2502,10 @@ function view3D(initKey){
 function shop(){
   hideMenuSlot();hideOverSlot();
   state='shop';var m=Math.max(bests[1],bests[2],bests[3]);
-  var html='<div class="box"><h2>Магазин свинок</h2><p>Рекорд: '+m+' · Баланс: <b>'+coins+' 🪙</b></p><button class="v3btn" id="open3d">🧊 Смотреть свинок в 3D (крутить 360°)</button>';
+  var html='<div class="box"><h2>Магазин свинок</h2><p>Твой лучший рекорд: '+m+'</p><button class="v3btn" id="open3d">🧊 Смотреть свинок в 3D (крутить 360°)</button>';
   Object.keys(SK).forEach(function(k){
     var o=owned(k);
-    html+='<div class="row"><canvas data-k="'+k+'" width="172" height="124"></canvas><div class="in">'+(SK[k].tag?'<span class="lim">'+esc(SK[k].tag)+'</span>':'')+'<b>'+esc(SK[k].n)+'</b><small>'+esc(SK[k].d)+'</small></div><button class="sec v3one" data-3d="'+k+'">3D</button><button class="sbtn" data-k="'+k+'"'+(o?'':' disabled')+'>'+(o?(curSkin()===k?'Выбрана':'Выбрать'):'Закрыта')+'</button></div>';
+    html+='<div class="row"><canvas data-k="'+k+'" width="172" height="124"></canvas><div class="in">'+(SK[k].tag?'<span class="lim">'+SK[k].tag+'</span>':'')+'<b>'+SK[k].n+'</b><small>'+SK[k].d+'</small></div><button class="sec v3one" data-3d="'+k+'">3D</button><button class="sbtn" data-k="'+k+'"'+(o?'':' disabled')+'>'+(o?(curSkin()===k?'Выбрана':'Выбрать'):'Закрыта')+'</button></div>';
   });
   html+='<button class="sec" id="bk">Назад</button></div>';
   ov(html);
@@ -2568,8 +2523,8 @@ function shop(){
 async function adminPanel(){
   hideMenuSlot();hideOverSlot();
   state='admin';
-  var html='<div class="box"><h2>Админ-панель (20+ команд)</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><input type="number" id="apt" placeholder="Число очков / монет (например 5000)"><div class="chk">';
-  ['grey','tux','gold','royal','malysh','oreo','alien'].forEach(function(k){html+='<label><input type="checkbox" data-s="'+k+'">'+esc(SK[k].n)+'</label>'});
+  var html='<div class="box"><h2>Админ-панель (20+ команд)</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><input type="number" id="apt" placeholder="Число очков (например 5000)"><div class="chk">';
+  ['grey','tux','gold','royal','malysh','oreo','alien'].forEach(function(k){html+='<label><input type="checkbox" data-s="'+k+'">'+SK[k].n+'</label>'});
   html+='<label><input type="checkbox" id="avip">VIP-значок в таблице</label></div><div class="msg" id="am"></div>';
   html+='<button class="sec" id="al">1. Загрузить права игрока</button>';
   html+='<button id="as">2. Выдать / сохранить скины и VIP</button>';
@@ -2594,7 +2549,6 @@ async function adminPanel(){
   html+='<button class="sec" id="ambee">20. Перекл. Пчёлы</button>';
   html+='<button class="sec" id="ammog">21. Перекл. Могну</button>';
   html+='<button class="sec" id="agth">22. Сменить тему GTA</button>';
-  html+='<button class="sec" id="agcoins">25. +Монеты себе</button>';
   html+='</div>';
   html+='<button class="red" id="ad">23. Удалить ник из таблицы</button>';
   html+='<button class="red" id="ara">24. Сбросить всем очки</button>';
@@ -2615,7 +2569,7 @@ async function adminPanel(){
     var rawNick=$('an')?$('an').value.trim():k;
     var f='b'+diff;
     if(online){
-      var cur=await fget('scores/'+k)||{nick:rawNick,owner:uid,b1:0,b2:0,b3:0,gold:false,coins:coins};
+      var cur=await fget('scores/'+k)||{nick:rawNick,owner:uid,b1:0,b2:0,b3:0,gold:false};
       var nv=fn(cur[f]||0);
       cur[f]=nv;
       await fput('scores/'+k,cur);
@@ -2634,12 +2588,6 @@ async function adminPanel(){
       return nv2;
     }
   }
-  if($('agcoins'))$('agcoins').onclick=function(){
-    var addC=$('apt')?parseInt($('apt').value,10):NaN;
-    var val=(!isNaN(addC)&&addC>0)?addC:250;
-    coins+=val;saveCoins();save();hud();
-    setAm('Добавлено +'+val+' 🪙 (баланс: '+coins+' 🪙)',true);
-  };
   if($('al'))$('al').onclick=async function(){
     var k=key();if(!k)return;
     try{
@@ -2777,12 +2725,12 @@ async function save(){
     try{
       var key=nick.toLowerCase();
       var cur=await fget('scores/'+key)||{};
-      cur.nick=nick;cur.owner=cur.owner||uid;cur.b1=bests[1];cur.b2=bests[2];cur.b3=bests[3];cur.gold=gold;cur.coins=coins;
+      cur.nick=nick;cur.owner=cur.owner||uid;cur.b1=bests[1];cur.b2=bests[2];cur.b3=bests[3];cur.gold=gold;
       if(accPass)cur.pass=accPass;
       await fput('scores/'+key,cur);
     }catch(e){}
   }else{
-    var b=getLoc();b[nick]={b1:bests[1],b2:bests[2],b3:bests[3],gold:gold,coins:coins};
+    var b=getLoc();b[nick]={b1:bests[1],b2:bests[2],b3:bests[3],gold:gold};
     try{localStorage.setItem('gp_board',JSON.stringify(b))}catch(e){}
   }
   loadLb();
@@ -2845,81 +2793,6 @@ if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
     await loadGr();syncModesUI();syncHeliBtn();stepCare();
     if(state==='ready')ready();
   }catch(e){}
-})();
-})();
-
-(function(){
-var _mk=mk,_leg=leg;
-function rg(s){return function(){s=(s*16807)%2147483647;return s/2147483647}}
-function cl(v){return v<0?0:(v>255?255:Math.round(v))}
-function fluff(c,k,blink){
-var W=c.width,H=c.height,g=c.getContext('2d');
-var d=g.getImageData(0,0,W,H).data,r=rg(97+k.length*31);
-function A(x,y){x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=W||y>=H)return 0;return d[(y*W+x)*4+3]}
-function C(x,y){x=Math.max(0,Math.min(W-1,Math.round(x)));y=Math.max(0,Math.min(H-1,Math.round(y)));var i=(y*W+x)*4;return[d[i],d[i+1],d[i+2]]}
-var edge=[];
-for(var y=2;y<H-2;y++)for(var x=2;x<W-2;x++){
-if(A(x,y)>200&&(A(x+1,y)<60||A(x-1,y)<60||A(x,y+1)<60||A(x,y-1)<60))edge.push([x,y])}
-var tmp=document.createElement('canvas');tmp.width=W;tmp.height=H;tmp.getContext('2d').drawImage(c,0,0);
-g.save();g.setTransform(1,0,0,1,0,0);
-g.globalCompositeOperation='destination-over';g.globalAlpha=.15;
-[[-1.7,0],[1.7,0],[0,-1.7],[0,1.7],[-1.2,-1.2],[1.2,-1.2],[-1.2,1.2],[1.2,1.2]].forEach(function(o){g.drawImage(tmp,o[0],o[1])});
-g.globalAlpha=1;
-g.globalCompositeOperation='source-atop';
-var sh=g.createLinearGradient(0,34,0,112);
-sh.addColorStop(0,'rgba(255,246,228,.22)');sh.addColorStop(.45,'rgba(255,240,220,0)');sh.addColorStop(1,'rgba(70,35,12,.28)');
-g.fillStyle=sh;g.fillRect(0,0,W,H);
-var hl=g.createRadialGradient(62,46,2,62,50,46);hl.addColorStop(0,'rgba(255,250,235,.26)');hl.addColorStop(1,'rgba(255,250,235,0)');
-g.fillStyle=hl;g.fillRect(0,0,W,H);
-var hh=g.createRadialGradient(128,44,1,128,50,24);hh.addColorStop(0,'rgba(255,250,235,.22)');hh.addColorStop(1,'rgba(255,250,235,0)');
-g.fillStyle=hh;g.fillRect(0,0,W,H);
-g.lineCap='round';
-for(var i=0;i<3400;i++){
-var px=r()*W,py=r()*H;if(A(px,py)<200)continue;
-var c0=C(px,py),f=(r()-.5)*70,len=3+r()*5,a=2.6+(r()-.5)*.8;
-g.strokeStyle='rgba('+cl(c0[0]+f)+','+cl(c0[1]+f)+','+cl(c0[2]+f)+','+(.28+r()*.3).toFixed(2)+')';
-g.lineWidth=.5+r()*.5;
-g.beginPath();g.moveTo(px,py);g.quadraticCurveTo(px+Math.cos(a)*len*.5,py+Math.sin(a)*len*.5+.8,px+Math.cos(a)*len,py+Math.sin(a)*len);g.stroke()}
-g.globalCompositeOperation='source-over';
-var n=Math.floor(edge.length*2.2);
-for(var j=0;j<n&&edge.length;j++){
-var e=edge[Math.floor(r()*edge.length)],ex=e[0],ey=e[1];
-var nx=A(ex-3,ey)-A(ex+3,ey),ny=A(ex,ey-3)-A(ex,ey+3),m=Math.sqrt(nx*nx+ny*ny);
-if(m<20)continue;nx/=m;ny/=m;
-var ln=1.6+r()*3.2,cc=C(ex-nx*4,ey-ny*4),f2=(r()-.4)*44;
-g.strokeStyle='rgba('+cl(cc[0]+f2)+','+cl(cc[1]+f2)+','+cl(cc[2]+f2)+','+(.35+r()*.3).toFixed(2)+')';
-g.lineWidth=.55+r()*.45;
-var bd=(r()-.5)*2;
-g.beginPath();g.moveTo(ex-nx*1.5,ey-ny*1.5);
-g.quadraticCurveTo(ex+nx*ln*.5-ny*bd-.4,ey+ny*ln*.5+nx*bd,ex+nx*ln-ny*bd-.8,ey+ny*ln+nx*bd+.3);g.stroke()}
-g.setTransform(1,0,0,1,0,10);
-g.globalCompositeOperation='source-atop';
-g.fillStyle='rgba(255,110,140,.11)';g.beginPath();g.ellipse(141,60,9,6,-.2,0,7);g.fill();
-if(!blink){
-g.fillStyle='rgba(255,255,255,.9)';g.beginPath();g.arc(131.8,48.2,1.1,0,7);g.fill();
-g.fillStyle='rgba(255,255,255,.18)';g.beginPath();g.arc(134,45,6.3,.3,1.8);g.lineTo(134,45);g.fill()}
-g.fillStyle='rgba(255,255,255,.5)';g.beginPath();g.arc(156.8,54.8,.9,0,7);g.fill();
-g.restore();
-return c}
-mk=function(k,bee,wet,cap,blink){
-var c=_mk(k,bee,wet,cap,blink);
-if(k==='alien')return c;
-return fluff(c,k,blink)};
-
-var legS=null;
-leg=function(x,y,a,P){
-_leg(x,y,a,P);
-if(modeBee||mode67||P===SK.alien)return;
-if(!legS){var r=rg(5);legS=[];for(var i=0;i<70;i++){var an=r()*6.283,rr=Math.sqrt(r());legS.push([Math.cos(an)*rr*6.4,9+Math.sin(an)*rr*11,r(),r()])}}
-ctx.save();ctx.translate(x,y);ctx.rotate(a);
-ctx.beginPath();ctx.ellipse(0,9,7,12,0,0,7);ctx.clip();
-ctx.beginPath();ctx.rect(-9,(P===SK.gta6)?8:-4,18,(P===SK.gta6)?7:19);ctx.clip();
-var gr=ctx.createLinearGradient(-7,0,7,0);gr.addColorStop(0,'rgba(255,240,215,.24)');gr.addColorStop(.6,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(60,30,10,.28)');
-ctx.fillStyle=gr;ctx.fillRect(-8,-4,16,26);
-ctx.lineWidth=.7;ctx.lineCap='round';
-legS.forEach(function(s){ctx.strokeStyle=s[2]>.5?'rgba(255,238,205,.32)':'rgba(60,30,10,.22)';ctx.beginPath();ctx.moveTo(s[0],s[1]);ctx.lineTo(s[0]-1.2,s[1]+2.4+s[3]*2);ctx.stroke()});
-ctx.restore()};
-SPR={};
 })();
 </script>
 </body>
