@@ -2354,7 +2354,7 @@ function view3D(initKey){
   uiDragState.v3Key=SK[initKey]?initKey:curSkin();
   uiDragState.mode='3d';uiDragState.active=false;
   var html='<div class="box"><h2>3D-осмотр свинки</h2><p>Крути пальцем или мышкой на 360° (можно посмотреть снизу на пузо)</p>';
-  html+='<div class="v3wrap" id="v3w"><canvas id="v3c" width="360" height="270"></canvas></div>';
+  html+='<div class="v3wrap" id="v3w"><canvas id="v3c" width="380" height="280"></canvas></div>';
   html+='<div class="v3pills">';
   Object.keys(SK).forEach(function(k){
     html+='<button class="sec'+(k===uiDragState.v3Key?' on':'')+'" data-v3k="'+k+'">'+SK[k].n+'</button>';
@@ -2365,6 +2365,9 @@ function view3D(initKey){
   ov(html);
 
   var c3=$('v3c'),g3=c3?c3.getContext('2d'):null,wr=$('v3w');
+  var furSeed=1337;
+  function nextFur(){furSeed=(furSeed*16807)%2147483647;return furSeed/2147483647}
+
   function syncPills(){
     document.querySelectorAll('[data-v3k]').forEach(function(b){
       var act=(b.dataset.v3k===uiDragState.v3Key);
@@ -2382,7 +2385,7 @@ function view3D(initKey){
   };
   if($('v3belly'))$('v3belly').onclick=function(){
     uiDragState.autoRot=false;if($('v3rot'))$('v3rot').textContent='Крутить 3D';
-    uiDragState.yaw=0.45;uiDragState.pitch=-1.28;
+    uiDragState.yaw=0.55;uiDragState.pitch=-1.15;
   };
   if($('v3bk'))$('v3bk').onclick=function(){shop()};
 
@@ -2397,116 +2400,200 @@ function view3D(initKey){
   function proj(x,y,z,cy,sy,cp,sp){
     var x1=x*cy-z*sy,z1=x*sy+z*cy;
     var y2=y*cp-z1*sp,z2=y*sp+z1*cp;
-    var sc=340/(340+z2);
-    return{x:180+x1*sc,y:138+y2*sc,z:z2,s:sc};
+    var sc=380/(380+z2);
+    return{x:190+x1*sc,y:146+y2*sc,z:z2,s:sc};
+  }
+
+  function traceEllipsoid(g,cx,cy,z,rx,ry,rz,rotZ,cyA,syA,cpA,spA,steps){
+    var n=steps||36;
+    for(var i=0;i<n;i++){
+      var th=(i/n)*Math.PI*2;
+      var lx=Math.cos(th)*rx;
+      var ly=Math.sin(th)*ry;
+      var rxZ=lx*Math.cos(rotZ)-ly*Math.sin(rotZ);
+      var ryZ=lx*Math.sin(rotZ)+ly*Math.cos(rotZ);
+      var pt=proj(cx+rxZ,cy+ryZ,z,cyA,syA,cpA,spA);
+      if(i===0)g.moveTo(pt.x,pt.y);
+      else g.lineTo(pt.x,pt.y);
+    }
+    g.closePath();
   }
 
   function draw3DFrame(){
     if(state!=='view3d'||!g3)return;
     var nowMs=performance.now();
-    if(uiDragState.autoRot)uiDragState.yaw+=0.018;
+    if(uiDragState.autoRot)uiDragState.yaw+=0.015;
     var P=SK[uiDragState.v3Key]||SK.classic;
-    var breath3=Math.sin(nowMs/330)*1.5;
-    var blink3=isPigBlinking(nowMs,0);
-    g3.clearRect(0,0,360,270);
+    var breath=Math.sin(nowMs/340)*1.3;
+    var blink=isPigBlinking(nowMs,0);
+    furSeed=901+uiDragState.v3Key.length*73;
+
+    g3.clearRect(0,0,380,280);
+    var amb=g3.createRadialGradient(190,90,15,190,145,190);
+    amb.addColorStop(0,'rgba(255,255,255,.11)');
+    amb.addColorStop(1,'rgba(9,9,11,0)');
+    g3.fillStyle=amb;g3.fillRect(0,0,380,280);
 
     var cy=Math.cos(uiDragState.yaw),sy=Math.sin(uiDragState.yaw),cp=Math.cos(uiDragState.pitch),sp=Math.sin(uiDragState.pitch);
     var items=[];
 
-    var shP=proj(0,48,0,cy,sy,cp,sp);
-    g3.fillStyle='rgba(0,0,0,.38)';
-    g3.beginPath();g3.ellipse(shP.x,shP.y,78*shP.s,22*shP.s,0,0,7);g3.fill();
+    var shP=proj(0,54,0,cy,sy,cp,sp);
+    g3.fillStyle='rgba(0,0,0,.44)';
+    g3.beginPath();g3.ellipse(shP.x,shP.y,86*shP.s,22*shP.s,0,0,7);g3.fill();
 
-    var segs=[
-      {x:-46,y:2,z:0,rx:32,ry:30+breath3*.4,rz:30+breath3*.4,c:P.a2},
-      {x:-24,y:0,z:0,rx:36,ry:34+breath3*.5,rz:34+breath3*.5,c:P.a1},
-      {x:0,y:-1,z:0,rx:38,ry:35+breath3*.55,rz:35+breath3*.55,c:P.a0},
-      {x:24,y:-2,z:0,rx:35,ry:32+breath3*.4,rz:32+breath3*.4,c:P.a1},
-      {x:48,y:-4,z:0,rx:28,ry:26,rz:26,c:P.a0},
-      {x:64,y:-1,z:0,rx:21,ry:19,rz:20,c:(P.cali||P.oreo)?'#27272a':P.a1}
-    ];
-    segs.forEach(function(sg){
-      var p=proj(sg.x,sg.y,sg.z,cy,sy,cp,sp);
+    // Ножки с объёмом и подушечками стоп
+    [[-38,34,-20],[-38,34,20],[32,34,-20],[32,34,20]].forEach(function(lp,idx){
+      var stride=Math.sin(nowMs/260+idx*1.57)*3.2;
+      var p=proj(lp[0],lp[1]+stride*0.35,lp[2],cy,sy,cp,sp);
       items.push({z:p.z,fn:function(){
-        var gr=g3.createRadialGradient(p.x-sg.rx*p.s*.3,p.y-sg.ry*p.s*.35,2,p.x,p.y,sg.rx*p.s);
-        gr.addColorStop(0,P.fl);gr.addColorStop(.45,sg.c);gr.addColorStop(1,P.a2);
-        g3.fillStyle=gr;
-        g3.beginPath();g3.ellipse(p.x,p.y,sg.rx*p.s,sg.ry*p.s,0,0,7);g3.fill();
-      }});
-    });
-
-    [-22,0,22].forEach(function(bx){
-      var bp=proj(bx,24,0,cy,sy,cp,sp);
-      items.push({z:bp.z-2,fn:function(){
-        g3.fillStyle=P.bel;
-        g3.beginPath();g3.ellipse(bp.x,bp.y,26*bp.s,14*bp.s,0,0,7);g3.fill();
-        if(P.wetBelly){
-          var wg=g3.createRadialGradient(bp.x,bp.y,2,bp.x,bp.y,21*bp.s);
-          wg.addColorStop(0,'rgba(234,179,8,.96)');
-          wg.addColorStop(.65,'rgba(250,204,21,.75)');
-          wg.addColorStop(1,'rgba(250,204,21,0)');
-          g3.fillStyle=wg;
-          g3.beginPath();g3.ellipse(bp.x,bp.y,22*bp.s,12*bp.s,0,0,7);g3.fill();
-        }
-      }});
-    });
-
-    [[-34,28,-18],[-34,28,18],[28,28,-18],[28,28,18]].forEach(function(lp){
-      var p=proj(lp[0],lp[1],lp[2],cy,sy,cp,sp);
-      items.push({z:p.z,fn:function(){
-        g3.fillStyle=P.lg;
-        g3.beginPath();g3.ellipse(p.x,p.y,9*p.s,11*p.s,0,0,7);g3.fill();
+        var lgGrad=g3.createLinearGradient(p.x-10*p.s,p.y-12*p.s,p.x+10*p.s,p.y+12*p.s);
+        lgGrad.addColorStop(0,P.a0);lgGrad.addColorStop(.5,P.lg);lgGrad.addColorStop(1,P.a2);
+        g3.fillStyle=lgGrad;
+        g3.beginPath();g3.ellipse(p.x,p.y,10*p.s,12*p.s,0,0,7);g3.fill();
         g3.fillStyle=P.ft;
-        g3.beginPath();g3.ellipse(p.x+2*p.s,p.y+8*p.s,10*p.s,5*p.s,0,0,7);g3.fill();
+        g3.beginPath();g3.ellipse(p.x+2.5*p.s,p.y+9.5*p.s,11*p.s,5.2*p.s,0,0,7);g3.fill();
       }});
     });
 
-    var earLift=Math.sin(nowMs/480)*2;
-    [[42,-24+earLift,-22],[42,-24-earLift*.5,22]].forEach(function(ep){
+    // Цельный обтекаемый корпус свинки + мордочка (без торчащих «колбасок»)
+    var bodyCenter=proj(-4,2+breath*.25,0,cy,sy,cp,sp);
+    var headCenter=proj(46,-6+breath*.2,0,cy,sy,cp,sp);
+    var bellyCenter=proj(-2,25+breath*.2,0,cy,sy,cp,sp);
+
+    items.push({z:bodyCenter.z,fn:function(){
+      g3.save();
+      g3.beginPath();
+      traceEllipsoid(g3,-14,2+breath*.25,0,52,32+breath*.45,33+breath*.45,-0.04,cy,sy,cp,sp,44);
+      traceEllipsoid(g3,24,-1+breath*.25,0,38,28+breath*.35,28+breath*.35,0.06,cy,sy,cp,sp,40);
+      var bGrad=g3.createLinearGradient(bodyCenter.x-55,bodyCenter.y-42,bodyCenter.x+55,bodyCenter.y+42);
+      bGrad.addColorStop(0,P.a0);
+      bGrad.addColorStop(.52,P.a1);
+      bGrad.addColorStop(1,P.a2);
+      g3.fillStyle=bGrad;
+      g3.fill();
+      g3.clip();
+
+      // Пятна окраса на корпусе
+      var pat1=proj(-26,-8,0,cy,sy,cp,sp);
+      g3.fillStyle=P.pat;
+      g3.beginPath();g3.ellipse(pat1.x,pat1.y,22*pat1.s,13*pat1.s,-.2,0,7);g3.fill();
+
+      // Объёмный блик сверху и мягкая тень снизу
+      var hiG=g3.createLinearGradient(0,bodyCenter.y-45,0,bodyCenter.y+35);
+      hiG.addColorStop(0,P.fl);
+      hiG.addColorStop(.55,'rgba(255,255,255,0)');
+      hiG.addColorStop(1,'rgba(15,23,42,.26)');
+      g3.fillStyle=hiG;
+      g3.fillRect(0,0,380,280);
+
+      // Тонкая текстура шёрсток по корпусу
+      var tuftsCount=P.oreo?420:(P.cali?320:220);
+      g3.lineCap='round';
+      for(var i=0;i<tuftsCount;i++){
+        var fx=(nextFur()-0.5)*110;
+        var fy=(nextFur()-0.5)*64;
+        var fz=(nextFur()-0.5)*56;
+        var fp=proj(fx,fy,fz,cy,sy,cp,sp);
+        var flen=(P.oreo?5.2:3.2)*fp.s;
+        g3.strokeStyle=nextFur()>0.5?P.fl:'rgba(24,24,27,.16)';
+        g3.lineWidth=(P.oreo?1.15:0.8)*fp.s;
+        g3.beginPath();g3.moveTo(fp.x,fp.y);g3.lineTo(fp.x-flen,fp.y+flen*.45);g3.stroke();
+      }
+      g3.restore();
+    }});
+
+    // Животик (особенно важен при взгляде снизу: «Вид на пузо»)
+    items.push({z:bellyCenter.z-1.5,fn:function(){
+      g3.fillStyle=P.bel;
+      g3.beginPath();g3.ellipse(bellyCenter.x,bellyCenter.y,36*bellyCenter.s,16*bellyCenter.s,0,0,7);g3.fill();
+      if(P.wetBelly){
+        var wg=g3.createRadialGradient(bellyCenter.x,bellyCenter.y,2,bellyCenter.x,bellyCenter.y,26*bellyCenter.s);
+        wg.addColorStop(0,'rgba(234,179,8,.96)');
+        wg.addColorStop(.65,'rgba(250,204,21,.75)');
+        wg.addColorStop(1,'rgba(250,204,21,0)');
+        g3.fillStyle=wg;
+        g3.beginPath();g3.ellipse(bellyCenter.x,bellyCenter.y,26*bellyCenter.s,13*bellyCenter.s,0,0,7);g3.fill();
+      }
+    }});
+
+    // Голова и мордочка
+    items.push({z:headCenter.z-0.5,fn:function(){
+      g3.save();
+      g3.beginPath();
+      traceEllipsoid(g3,48,-5+breath*.2,0,26,22,22,0.08,cy,sy,cp,sp,36);
+      traceEllipsoid(g3,64,2+breath*.2,0,17,15,15,0.04,cy,sy,cp,sp,30);
+      var hGrad=g3.createRadialGradient(headCenter.x-6,headCenter.y-10,2,headCenter.x,headCenter.y,34);
+      hGrad.addColorStop(0,P.a0);
+      hGrad.addColorStop(.6,P.a1);
+      hGrad.addColorStop(1,P.a2);
+      g3.fillStyle=hGrad;
+      g3.fill();
+      g3.clip();
+
+      if(P.cali||P.oreo){
+        var snP=proj(73,4,0,cy,sy,cp,sp);
+        var snG=g3.createRadialGradient(snP.x,snP.y,1,snP.x,snP.y,22*snP.s);
+        snG.addColorStop(0,P.oreo?'rgba(24,24,27,.95)':'rgba(68,64,60,.88)');
+        snG.addColorStop(1,'rgba(255,255,255,0)');
+        g3.fillStyle=snG;
+        g3.beginPath();g3.arc(snP.x,snP.y,22*snP.s,0,7);g3.fill();
+      }
+      g3.restore();
+    }});
+
+    // Ушки с лёгким подёргиванием
+    var earLift=Math.sin(nowMs/480)*2.2;
+    [[38,-23+earLift,-20],[38,-23-earLift*.5,20]].forEach(function(ep){
       var p=proj(ep[0],ep[1],ep[2],cy,sy,cp,sp);
       items.push({z:p.z,fn:function(){
         g3.fillStyle=P.ear;
-        g3.beginPath();g3.ellipse(p.x,p.y,11*p.s,8*p.s,-.3,0,7);g3.fill();
+        g3.beginPath();g3.ellipse(p.x,p.y,11.5*p.s,8.5*p.s,-.35,0,7);g3.fill();
         g3.fillStyle=P.ei;
-        g3.beginPath();g3.ellipse(p.x,p.y,6.5*p.s,4.2*p.s,-.3,0,7);g3.fill();
+        g3.beginPath();g3.ellipse(p.x+1*p.s,p.y,6.8*p.s,4.5*p.s,-.35,0,7);g3.fill();
       }});
     });
 
-    [[64,-9,-14],[64,-9,14]].forEach(function(ey){
+    // Глаза с морганием и бликом
+    [[58,-10,-15],[58,-10,15]].forEach(function(ey){
       var p=proj(ey[0],ey[1],ey[2],cy,sy,cp,sp);
-      items.push({z:p.z-1,fn:function(){
-        if(blink3){
-          g3.strokeStyle=P.ufo?'#052e16':'#111827';
-          g3.lineWidth=2.2*p.s;
-          g3.beginPath();g3.moveTo(p.x-4.5*p.s,p.y);g3.lineTo(p.x+4.5*p.s,p.y);g3.stroke();
+      items.push({z:p.z-1.2,fn:function(){
+        if(blink){
+          g3.strokeStyle=P.ufo?'#052e16':'#18181b';
+          g3.lineWidth=2.3*p.s;g3.lineCap='round';
+          g3.beginPath();g3.moveTo(p.x-4.8*p.s,p.y);g3.quadraticCurveTo(p.x,p.y+2*p.s,p.x+4.8*p.s,p.y);g3.stroke();
         }else{
           g3.fillStyle=P.ufo?'#052e16':'#111827';
-          g3.beginPath();g3.arc(p.x,p.y,5.4*p.s,0,7);g3.fill();
+          g3.beginPath();g3.arc(p.x,p.y,5.6*p.s,0,7);g3.fill();
           g3.fillStyle=P.ufo?'#86efac':'#ffffff';
-          g3.beginPath();g3.arc(p.x+1.5*p.s,p.y-1.6*p.s,1.9*p.s,0,7);g3.fill();
+          g3.beginPath();g3.arc(p.x+1.6*p.s,p.y-1.7*p.s,2*p.s,0,7);g3.fill();
         }
       }});
     });
 
-    var noseWig=Math.sin(nowMs/240)*1.2;
-    var np=proj(83,1+noseWig*.3,noseWig,cy,sy,cp,sp);
-    items.push({z:np.z-1,fn:function(){
+    // Носик и вибриссы
+    var noseWig=Math.sin(nowMs/240)*1.1;
+    var np=proj(81,3+noseWig*.3,noseWig,cy,sy,cp,sp);
+    items.push({z:np.z-1.4,fn:function(){
       g3.fillStyle=P.oreo?'#18181b':(P.cali?'#383435':(P.ufo?'#15803d':'#f472b6'));
-      g3.beginPath();g3.ellipse(np.x,np.y,5*np.s,4*np.s,0,0,7);g3.fill();
+      g3.beginPath();g3.ellipse(np.x,np.y,5.2*np.s,4*np.s,0,0,7);g3.fill();
+      g3.strokeStyle='rgba(255,255,255,.45)';g3.lineWidth=0.9*pSafe(np.s);
+      [-5,0,5].forEach(function(wy){
+        g3.beginPath();g3.moveTo(np.x-2*np.s,np.y+1*np.s);g3.lineTo(np.x+12*np.s,np.y+(1+wy)*np.s);g.stroke();
+      });
     }});
 
+    function pSafe(v){return Math.max(0.4,v||1)}
+
+    // Аксессуары скинов (бантик Зефирки, корона, тарелка, пух Орео)
     if(P.bow){
-      var bwP=proj(46,-33,0,cy,sy,cp,sp);
+      var bwP=proj(44,-31,0,cy,sy,cp,sp);
       items.push({z:bwP.z-2,fn:function(){
-        g3.fillStyle='#f472b6';g3.strokeStyle='#be185d';g3.lineWidth=1.3;
-        g3.beginPath();g3.ellipse(bwP.x-9*bwP.s,bwP.y,8*bwP.s,5*bwP.s,-.2,0,7);g3.fill();g3.stroke();
-        g3.beginPath();g3.ellipse(bwP.x+9*bwP.s,bwP.y,8*bwP.s,5*bwP.s,.2,0,7);g3.fill();g3.stroke();
-        g3.fillStyle='#fbcfe8';g3.beginPath();g3.arc(bwP.x,bwP.y,4*bwP.s,0,7);g3.fill();g3.stroke();
+        drawBow2D(g3,bwP.x,bwP.y);
       }});
     }
 
     if(P.crown){
-      var cr=proj(46,-34,0,cy,sy,cp,sp);
+      var cr=proj(44,-32,0,cy,sy,cp,sp);
       items.push({z:cr.z-2,fn:function(){
         g3.fillStyle='#facc15';g3.strokeStyle='#b45309';g3.lineWidth=1.4;
         g3.beginPath();
@@ -2522,17 +2609,16 @@ function view3D(initKey){
     }
 
     if(P.ufo){
-      var uf=proj(4,34,0,cy,sy,cp,sp);
+      var uf=proj(2,38,0,cy,sy,cp,sp);
       items.push({z:uf.z+3,fn:function(){
-        g3.fillStyle='#475569';g3.strokeStyle='#38bdf8';g3.lineWidth=1.6;
-        g3.beginPath();g3.ellipse(uf.x,uf.y,64*uf.s,15*uf.s,0,0,7);g3.fill();g3.stroke();
+        drawUfo(g3,uf.x,uf.y,0.95*uf.s);
       }});
     }
 
     if(P.oreo){
-      var flP=proj(38,-31,0,cy,sy,cp,sp);
+      var flP=proj(36,-29,0,cy,sy,cp,sp);
       items.push({z:flP.z-1,fn:function(){
-        g3.strokeStyle='#ffffff';g3.lineWidth=2.4*flP.s;g3.lineCap='round';
+        g3.strokeStyle='#ffffff';g3.lineWidth=2.3*flP.s;g3.lineCap='round';
         for(var fi=-3;fi<=3;fi++){
           g3.beginPath();g3.moveTo(flP.x+fi*5*flP.s,flP.y+4*flP.s);g3.lineTo(flP.x+fi*6*flP.s,flP.y-7*flP.s);g3.stroke();
         }
@@ -2542,7 +2628,7 @@ function view3D(initKey){
     items.sort(function(a,b){return b.z-a.z});
     items.forEach(function(it){it.fn()});
 
-    g3.fillStyle='rgba(255,255,255,.85)';
+    g3.fillStyle='rgba(255,255,255,.88)';
     g3.font='bold 13px system-ui,sans-serif';
     g3.fillText(P.n+(P.wetBelly?' · пузо видно снизу':''),12,22);
 
