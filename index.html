@@ -36,10 +36,13 @@ canvas{display:block;width:100%;height:auto}
 .gtabtn.on{background:linear-gradient(90deg,#ff4d94,#ff9e00);color:#fff;border-color:#fde047;box-shadow:0 0 12px rgba(255,77,148,.75)}
 .helibtn{position:absolute;right:12px;bottom:48px;z-index:5;display:none;width:auto;margin:0;padding:7px 12px;border-radius:999px;background:linear-gradient(90deg,#ea580c,#eab308);color:#fff;border:1px solid #fef08a;font-size:12px;font-weight:800;box-shadow:0 4px 14px rgba(234,88,12,.5)}
 .helibtn.show{display:inline-flex;align-items:center;gap:4px}
+.alertbar{margin-top:8px;padding:8px 12px;border-radius:10px;background:rgba(220,38,38,.14);border:1px solid rgba(220,38,38,.45);color:#ef4444;font-weight:700;font-size:13px;display:none;align-items:center;justify-content:space-between;gap:8px}
+.alertbar.show{display:flex}
+.alertbar button{width:auto;margin:0;padding:5px 10px;font-size:12px}
 .ov{position:fixed;inset:0;z-index:20;display:none;background:rgba(30,20,10,.6);padding:16px;overflow:auto}
-.box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;width:100%;max-width:360px;text-align:center;margin:auto}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;width:100%;max-width:380px;text-align:center;margin:auto}
 .box p{margin:6px 0;color:var(--mu);font-size:14px}
-input[type=text],input[type=password]{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);margin:8px 0;text-align:center}
+input[type=text],input[type=password],input[type=number]{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);margin:8px 0;text-align:center}
 button{font:inherit;font-weight:600;background:var(--ac);color:#fff;border:0;border-radius:10px;padding:11px 18px;width:100%;cursor:pointer;margin-top:6px}
 button:disabled{opacity:.45;cursor:default}
 .sec{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
@@ -68,21 +71,27 @@ li.me{color:var(--ac);font-weight:600}
 .lim{display:inline-block;align-self:flex-start;background:linear-gradient(90deg,#16a34a,#06b6d4);color:#fff;font-size:10px;font-weight:800;letter-spacing:.6px;padding:2px 6px;border-radius:5px;margin-bottom:2px}
 .chk{text-align:left;font-size:15px;margin:6px 0}.chk label{display:block;padding:4px 0}
 .chk input{margin-right:8px}
+.stbar{display:flex;flex-direction:column;gap:8px;text-align:left;margin:8px 0}
+.strow{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
+.sthead{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:4px}
+.mtr{height:8px;border-radius:999px;background:rgba(128,128,128,.22);overflow:hidden}
+.mfl{height:100%;transition:width .2s}
 </style>
 </head>
 <body>
 <div class="w">
 <h1>Морская свинка: беги и прыгай</h1>
+<div class="alertbar" id="abar"><span id="atxt">Покорми свинку</span><button type="button" id="afix">В меню ухода</button></div>
 <div class="stage" id="st">
 <canvas id="c" width="640" height="300"></canvas>
 <div class="hud"><span id="sc">0</span><span id="bs"></span></div>
-<button type="button" class="helibtn" id="hb" title="Купить вертолёт за 5000 очков">🚁 Вертолёт · 5000</button>
+<button type="button" class="helibtn" id="hb" title="Купить вертолёт">🚁 Вертолёт · 5000</button>
 <button type="button" class="mbtn" id="mb" title="Музыка и звуки">🔊</button>
 <button type="button" class="s67btn" id="sb67" title="Six-Seven Mode">67</button>
 <button type="button" class="gtabtn" id="gb6" title="GTA VI Mode (6 звёзд)">GTA VI</button>
 <button type="button" class="fsbtn" id="fsb" title="На весь экран">⛶</button>
 </div>
-<p class="note">Прыжок: пробел, стрелка вверх или касание экрана. Вкусняшки: 🥒 +50, 🥕 +100 и супер-прыжок, 🌿 +200 и щит. На 5000 очках доступен 🚁 вертолёт!</p>
+<p class="note">Прыжок: пробел, стрелка вверх или касание экрана. Вкусняшки: 🥒 +50, 🥕 +100 и супер-прыжок, 🌿 +200 и щит. Следи за сытостью и чистотой свинки!</p>
 <div class="card"><h2>Таблица лидеров</h2>
 <div class="tabs" id="tb"><button data-t="1">Лёгкий</button><button data-t="2">Средний</button><button data-t="3">Гипер</button></div>
 <ol id="lb"></ol><div class="note" id="ln"></div></div>
@@ -98,8 +107,111 @@ var online=false,tok=null,exp=0,isAdmin=false;
 var $=function(i){return document.getElementById(i)};
 var cv=$('c'),ctx=cv.getContext('2d'),W=640,H=300,GY=250;
 var uid=null,nick=null,accPass='',state='nick',diff=2,lbTab=2,bests={1:0,2:0,3:0},gold=false,skin='classic',banner=0,GRALL={},news='',passAuth=false,mode67=false,modeGta=false,muted=false,fullSc=false;
-try{nick=localStorage.getItem('gp_nick');accPass=localStorage.getItem('gp_accpass')||'';diff=+localStorage.getItem('gp_diff')||2;skin=localStorage.getItem('gp_skin')||'classic';passAuth=localStorage.getItem('gp_fly')==='1';muted=localStorage.getItem('gp_mute')==='1'}catch(e){}
+var hunger=100,clean=100,lastTick=Date.now(),lastNotif=0,careDeathReason='';
+try{
+nick=localStorage.getItem('gp_nick');accPass=localStorage.getItem('gp_accpass')||'';
+diff=+localStorage.getItem('gp_diff')||2;skin=localStorage.getItem('gp_skin')||'classic';
+passAuth=localStorage.getItem('gp_fly')==='1';muted=localStorage.getItem('gp_mute')==='1';
+var sh=localStorage.getItem('gp_hunger');if(sh!==null&&!isNaN(+sh))hunger=Math.max(0,Math.min(100,+sh));
+var sc2=localStorage.getItem('gp_clean');if(sc2!==null&&!isNaN(+sc2))clean=Math.max(0,Math.min(100,+sc2));
+var stt=localStorage.getItem('gp_care_ts');if(stt&&!isNaN(+stt))lastTick=+stt;
+}catch(e){}
 lbTab=diff;
+
+/* Уведомления «покорми свинку» */
+function sendFeedNotification(msg){
+var text=msg||'Покорми свинку';
+$('atxt').textContent=text;
+$('abar').classList.add('show');
+var now=Date.now();
+if(now-lastNotif<25000)return;
+lastNotif=now;
+try{
+if('Notification' in window&&Notification.permission==='granted'){
+new Notification('Морская свинка',{body:text});
+}
+}catch(e){}
+}
+async function requestNotifPermission(){
+if(!('Notification' in window))return 'unsupported';
+if(Notification.permission==='granted')return 'granted';
+try{return await Notification.requestPermission()}catch(e){return 'denied'}
+}
+$('afix').onclick=function(){careShopScreen()};
+
+function saveCareState(){
+try{
+localStorage.setItem('gp_hunger',String(Math.round(hunger*10)/10));
+localStorage.setItem('gp_clean',String(Math.round(clean*10)/10));
+localStorage.setItem('gp_care_ts',String(lastTick));
+}catch(e){}
+}
+
+function tickCare(){
+var now=Date.now();
+var elSec=Math.max(0,(now-lastTick)/1000);
+lastTick=now;
+if(elSec>0&&state!=='play'){
+hunger=Math.max(0,hunger-elSec*1.35);
+clean=Math.max(0,clean-elSec*1.1);
+}
+if(hunger<=35){
+sendFeedNotification(hunger<=12?'Срочно покорми свинку, она умирает от голода!':'Покорми свинку');
+}else{
+$('abar').classList.remove('show');
+}
+saveCareState();
+if(hunger<=0||clean<=0){
+careDeathReason=hunger<=0?'Свинка умерла от голода — ты забыл её покормить!':'Свинка не выдержала грязи и мух!';
+hunger=100;clean=100;saveCareState();
+if(state!=='play'){
+ov('<div class="box"><h2>Свинка погибла</h2><p>'+careDeathReason+'</p><button id="cdok">Воскресить и начать заново</button></div>');
+$('cdok').onclick=function(){careDeathReason='';ready()};
+}
+}
+}
+setInterval(tickCare,1000);
+
+/* Начальная заставка */
+var splashAlpha=1,splashTimer=0,splashDismissed=false;
+function drawSplash(){
+if(splashAlpha<=0.01||state==='play')return;
+var t=performance.now();
+ctx.save();
+ctx.globalAlpha=Math.max(0,Math.min(1,splashAlpha));
+var sg=ctx.createLinearGradient(0,0,W,H);
+sg.addColorStop(0,'rgba(15,10,28,.82)');
+sg.addColorStop(.5,'rgba(36,16,58,.76)');
+sg.addColorStop(1,'rgba(15,23,42,.85)');
+ctx.fillStyle=sg;ctx.fillRect(0,0,W,H);
+ctx.strokeStyle='rgba(255,158,0,.45)';ctx.lineWidth=1.5;
+ctx.beginPath();ctx.roundRect(22,22,W-44,H-44,16);ctx.stroke();
+ctx.fillStyle='rgba(255,77,148,.22)';ctx.strokeStyle='#ff4d94';ctx.lineWidth=1.2;
+ctx.beginPath();ctx.roundRect(W/2-74,56,148,22,11);ctx.fill();ctx.stroke();
+ctx.fillStyle='#fde047';ctx.font='800 11px system-ui,sans-serif';ctx.textAlign='center';
+ctx.fillText('GUINEA PIG RUNNER',W/2,71);
+var bob=Math.sin(t/340)*3;
+ctx.shadowColor='rgba(255,77,148,.65)';ctx.shadowBlur=16;
+ctx.fillStyle='#ffffff';ctx.font='900 32px system-ui,sans-serif';
+ctx.fillText('МОРСКАЯ СВИНКА',W/2,116+bob);
+ctx.shadowBlur=0;
+ctx.fillStyle='#e2e8f0';ctx.font='600 14px system-ui,sans-serif';
+ctx.fillText('Беги · Прыгай · Корми и мой свинку · 67 & GTA VI',W/2,142);
+ctx.fillStyle='rgba(254,240,138,.85)';ctx.font='700 12px system-ui,sans-serif';
+var pulseA=.55+.45*Math.sin(t/280);
+ctx.globalAlpha=Math.max(0,Math.min(1,splashAlpha*pulseA));
+ctx.fillText('Нажми в любом месте или выбери режим в меню',W/2,172);
+ctx.restore();
+}
+(function splashLoop(){
+if(state!=='play'&&!splashDismissed){
+splashTimer+=16.67;
+if(splashTimer>2400)splashAlpha=Math.max(0,splashAlpha-0.025);
+bg();drawPig();drawSplash();
+}
+requestAnimationFrame(splashLoop);
+})();
+function dismissSplash(){splashDismissed=true;splashAlpha=0}
 
 /* Полноэкранный режим */
 function syncFsUI(){
@@ -310,7 +422,6 @@ function owned(k){if(SK[k].free)return true;var g=myGR();if(g.skins&&g.skins[k])
 function curSkin(){if(modeGta)return'gta6';return owned(skin)?skin:'classic'}
 
 var px=100,py=GY,vy=0,air=false,paused=false,ph=0,obs=[],treats=[],pops=[],parts=[],spd=5,dist=0,bonus=0,score=0,cd=0,tcd=180,hiJump=0,shield=0,joyTimer=0,scared=false,banner=0,clouds=[],pigeons=[],tufts=[],L=LV[2];
-/* Состояние вертолёта и сцены взрыва */
 var heliActive=false,heliRentTimer=0,heliFarmAcc=0,heliRotor=0,doomPhase=0,doomTimer=0,doomRed=0,doomBlack=0,t0=0;
 
 for(var i=0;i<5;i++)clouds.push({x:rnd(0,W),y:rnd(20,100),s:rnd(.6,1.2)});
@@ -326,21 +437,26 @@ syncTracks();
 }
 
 function syncHeliBtn(){
-var canBuy=(state==='play'&&!paused&&!heliActive&&doomPhase===0&&score>=5000);
+var freeStart=!!isAdmin;
+var canBuy=(state==='play'&&!paused&&!heliActive&&doomPhase===0&&(freeStart||score>=5000));
+$('hb').textContent=freeStart?'🚁 Вертолёт · БЕСПЛАТНО (АДМИН)':'🚁 Вертолёт · 5000';
 $('hb').classList.toggle('show',canBuy);
 }
 
 function buyHelicopter(){
-if(state!=='play'||paused||heliActive||doomPhase!==0||score<5000)return;
+var freeStart=!!isAdmin;
+if(state!=='play'||paused||heliActive||doomPhase!==0||(!freeStart&&score<5000))return;
+if(!freeStart){
 bonus-=5000;
 score=Math.max(0,Math.floor(dist/10)+bonus);
+}
 heliActive=true;
 heliRentTimer=120;
 heliFarmAcc=0;
 air=true;vy=0;
 sfxHeliStart();
 addBurst(px,py-45,'#facc15',22);
-pops.push({x:px+15,y:py-88,tx:'🚁 -5000 (ФАРМ!)',c:'#facc15',l:55});
+pops.push({x:px+15,y:py-88,tx:freeStart?'🚁 СТАРТ (АДМИН)!':'🚁 -5000 (ФАРМ!)',c:'#facc15',l:55});
 syncHeliBtn();
 hud();
 }
@@ -349,6 +465,7 @@ $('hb').addEventListener('pointerdown',function(e){e.stopPropagation()});
 $('hb').onclick=function(e){e.stopPropagation();buyHelicopter()};
 
 function askSecretPass(title,desc,onSuccess){
+dismissSplash();
 var wasPlay=(state==='play');
 if(wasPlay)paused=true;
 ov('<div class="box"><h2>'+title+'</h2><p>'+desc+'</p><input type="password" id="fpi" inputmode="numeric" maxlength="12" placeholder="••••"><div class="msg" id="fpm"></div><button id="fpok">Включить</button><button class="sec" id="fpno">Отмена</button></div>');
@@ -365,21 +482,21 @@ $('fpno').onclick=function(){closePass(false)};
 }
 
 $('sb67').addEventListener('pointerdown',function(e){e.stopPropagation()});
-$('sb67').onclick=function(e){e.stopPropagation();initAudio();
+$('sb67').onclick=function(e){e.stopPropagation();dismissSplash();initAudio();
 if(mode67){mode67=false;syncModesUI();if(state!=='play'){bg();drawPig()}return}
 function enable67(){mode67=true;modeGta=false;syncModesUI();sfxWin()}
 if(!passAuth){askSecretPass('Six-Seven Mode (67)','Введи пароль для запуска 6-7 режима:',enable67);return}
 enable67();if(state!=='play'){bg();drawPig()}};
 
 $('gb6').addEventListener('pointerdown',function(e){e.stopPropagation()});
-$('gb6').onclick=function(e){e.stopPropagation();initAudio();
+$('gb6').onclick=function(e){e.stopPropagation();dismissSplash();initAudio();
 modeGta=!modeGta;if(modeGta)mode67=false;
 syncModesUI();if(modeGta)sfxWin();
 if(state!=='play'){bg();drawPig()}};
 
 function jump(){if(state==='play'&&!paused&&doomPhase===0&&!heliActive&&!air){var sup=hiJump>0;vy=sup?-16.2:-13.2;air=true;sfxJump(sup)}}
 function start(){
-initAudio();L=LV[diff];obs=[];treats=[];pops=[];parts=[];
+dismissSplash();initAudio();L=LV[diff];obs=[];treats=[];pops=[];parts=[];
 spd=L.s0;dist=0;bonus=0;score=0;py=GY;vy=0;air=false;paused=false;
 cd=90;tcd=150;hiJump=0;shield=0;joyTimer=0;scared=false;banner=0;
 heliActive=false;heliRentTimer=0;heliFarmAcc=0;heliRotor=0;doomPhase=0;doomTimer=0;doomRed=0;doomBlack=0;
@@ -474,22 +591,18 @@ function star(x,y,s){var p=[[0,-1],[.28,-.28],[1,0],[.28,.28],[0,1],[-.28,.28],[
 function drawHelicopter(cx,cy){
 ctx.save();ctx.translate(cx,cy);
 var bladeW=Math.max(6,Math.abs(Math.cos(heliRotor))*48);
-/* Хвостовая балка и рулевой винт */
 ctx.fillStyle='#334155';ctx.strokeStyle='#0f172a';ctx.lineWidth=1.4;
 ctx.beginPath();ctx.moveTo(-42,4);ctx.lineTo(-96,-6);ctx.lineTo(-96,2);ctx.lineTo(-42,12);ctx.closePath();ctx.fill();ctx.stroke();
 ctx.fillStyle='#ef4444';ctx.fillRect(-100,-12,6,18);
 ctx.strokeStyle='#f8fafc';ctx.lineWidth=2;
 ctx.beginPath();ctx.moveTo(-97,-14+Math.sin(heliRotor*2)*5);ctx.lineTo(-97,8-Math.sin(heliRotor*2)*5);ctx.stroke();
-/* Полозья посадки */
 ctx.strokeStyle='#94a3b8';ctx.lineWidth=2.4;
 ctx.beginPath();ctx.moveTo(-26,24);ctx.lineTo(34,24);ctx.moveTo(-14,14);ctx.lineTo(-18,24);ctx.moveTo(16,14);ctx.lineTo(20,24);ctx.stroke();
-/* Корпус и кабина */
 var cg=ctx.createLinearGradient(0,-16,0,18);
 cg.addColorStop(0,'#f97316');cg.addColorStop(1,'#9a3412');
 ctx.fillStyle=cg;ctx.beginPath();ctx.ellipse(0,2,44,16,0,0,7);ctx.fill();ctx.stroke();
 ctx.fillStyle='rgba(125,211,252,.65)';
 ctx.beginPath();ctx.ellipse(22,0,15,10,0,0,7);ctx.fill();ctx.stroke();
-/* Мачта и несущий винт */
 ctx.fillStyle='#cbd5e1';ctx.fillRect(-3,-24,6,10);
 ctx.fillStyle='rgba(248,250,252,.85)';
 ctx.fillRect(-bladeW,-26,bladeW*2,3.5);
@@ -545,6 +658,23 @@ ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillRect(57,-56,6,2);
 ctx.strokeStyle='#facc15';ctx.lineWidth=3.5;
 ctx.beginPath();ctx.arc(38,-35,16,.2,2.7);ctx.stroke();
 ctx.fillStyle='#facc15';ctx.font='bold 10px system-ui,sans-serif';ctx.fillText('67',33,-16);
+}
+/* Запах и мухи, если свинка грязная */
+if(clean<45&&k!=='alien'){
+var stinkA=Math.min(.75,(45-clean)/60);
+ctx.strokeStyle='rgba(132,204,22,'+stinkA.toFixed(2)+')';ctx.lineWidth=2;ctx.lineCap='round';
+[-12,12].forEach(function(sx,si){
+var wv=Math.sin(performance.now()/220+si)*3;
+ctx.beginPath();ctx.moveTo(sx,-68);ctx.quadraticCurveTo(sx+wv,-78,sx-wv,-88);ctx.stroke();
+});
+var flyCount=clean<20?4:2;
+for(var fl=0;fl<flyCount;fl++){
+var angF=performance.now()/160+fl*1.7;
+var fx=Math.cos(angF)*54,fy=-46+Math.sin(angF*1.4)*24;
+ctx.fillStyle='#111827';ctx.beginPath();ctx.arc(fx,fy,2.6,0,7);ctx.fill();
+ctx.fillStyle='rgba(255,255,255,.75)';
+ctx.beginPath();ctx.ellipse(fx-2.5,fy-2,2.5,1.3,-.5,0,7);ctx.ellipse(fx+2.5,fy-2,2.5,1.3,.5,0,7);ctx.fill();
+}
 }
 ctx.restore();
 if(shield>0){
@@ -713,7 +843,6 @@ ctx.fillText('★',W-12-s*18,46);
 }
 ctx.textAlign='left';
 }
-/* Красный экран взрыва, затемнение до чёрного и красный текст «МОЛОДЕЦ..» */
 if(doomPhase>0){
 if(doomRed>0){
 ctx.fillStyle='rgba(220,20,20,'+doomRed.toFixed(3)+')';
@@ -871,8 +1000,64 @@ if(!fromHeliBoom)sfxHit();
 state='over';var before=ownedMap();bg();obs.forEach(drawObs);treats.forEach(drawTreat);drawPig();drawEffects();
 var nb=score>bests[diff];if(nb){bests[diff]=score;save()}hud();
 var nw=Object.keys(SK).filter(function(k){return owned(k)&&!before[k]}).map(function(k){return SK[k].n});
-ov('<div class="box"><h2>'+(fromHeliBoom?'МОЛОДЕЦ..':(modeGta?'ПОТРАЧЕНО':'Игра окончена'))+'</h2><p>'+LV[diff].n+': '+score+' очков'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+nw.join(', ')+'. Загляни в магазин!</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">Ещё раз</button><div class="lr"><button class="sec" id="lv">Сложность</button><button class="sec" id="shp">Магазин</button></div></div>');
-$('go').onclick=start;$('lv').onclick=function(){ready()};$('shp').onclick=shop}
+ov('<div class="box"><h2>'+(fromHeliBoom?'МОЛОДЕЦ..':(modeGta?'ПОТРАЧЕНО':'Игра окончена'))+'</h2><p>'+LV[diff].n+': '+score+' очков'+(nb?' — новый рекорд!':'')+'</p><p>Рекорд: '+bests[diff]+'</p>'+(nw.length?'<p>Открыта свинка: '+nw.join(', ')+'. Загляни в магазин!</p>':'')+(diff===3&&!gold?'<p>До золотой свинки: '+Math.max(0,1500-score)+' очков</p>':'')+'<button id="go">Ещё раз</button><div class="lr"><button class="sec" id="lv">Сложность</button><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button></div></div>');
+$('go').onclick=start;$('lv').onclick=function(){ready()};$('shp').onclick=shop;$('crd').onclick=careShopScreen}
+
+/* Магазин еды, голод и купание */
+var FOODS=[
+{id:'cuke',n:'🥒 Огурец',p:50,h:25,c:-4},
+{id:'carrot',n:'🥕 Сочная морковка',p:100,h:45,c:-6},
+{id:'dill',n:'🌿 Золотой укроп',p:180,h:70,c:-8},
+{id:'banquet',n:'🥗 Праздничный микс',p:300,h:100,c:-10}
+];
+function careShopScreen(){
+dismissSplash();state='care';tickCare();
+var hCol=hunger>40?'#22c55e':(hunger>18?'#f59e0b':'#ef4444');
+var cCol=clean>45?'#38bdf8':(clean>20?'#f59e0b':'#84cc16');
+var statusTxt=clean<20?'Свинка жутко воняет, вокруг роятся мухи!':(clean<45?'Свинка пачкается, пора искупать!':(hunger<25?'Свинка голодная — срочно покорми!':'Свинка в норме');
+var h='<div class="box"><h2>Еда и уход</h2><p>Рекорд (ср.): '+bests[2]+' · '+statusTxt+'</p>';
+h+='<div class="stbar">';
+h+='<div class="strow"><div class="sthead"><span>🍖 Сытость</span><span>'+Math.round(hunger)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(hunger)+'%;background:'+hCol+'"></div></div></div>';
+h+='<div class="strow"><div class="sthead"><span>🛁 Чистота</span><span>'+Math.round(clean)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(clean)+'%;background:'+cCol+'"></div></div></div>';
+h+='</div>';
+FOODS.forEach(function(f){
+var cost=isAdmin?0:f.p;
+h+='<button class="dbtn" data-f="'+f.id+'"><span>'+f.n+' <small>+'+f.h+' сытости</small></span><small>'+(cost===0?'БЕСПЛАТНО':cost+' очк.')+'</small></button>';
+});
+var washCost=isAdmin?0:60;
+h+='<button id="wsh">🛁 Искупать свинку ('+(washCost===0?'БЕСПЛАТНО':washCost+' очк.')+')</button>';
+h+='<button class="sec" id="ntf">🔔 Включить уведомления «Покорми свинку»</button>';
+h+='<div class="msg" id="cm"></div><button class="sec" id="cbk">Назад</button></div>';
+ov(h);
+document.querySelectorAll('[data-f]').forEach(function(b){
+b.onclick=function(){
+var it=FOODS.find(function(x){return x.id===b.dataset.f});
+var cost=isAdmin?0:it.p;
+if(bests[diff]<cost){$('cm').textContent='Не хватает очков в режиме «'+LV[diff].n+'»';return}
+if(!isAdmin){bests[diff]-=cost;save()}
+hunger=Math.min(100,hunger+it.h);
+clean=Math.max(0,clean+it.c);
+joyTimer=80;lastTick=Date.now();saveCareState();sfxTreat(1);
+careShopScreen();
+};
+});
+$('wsh').onclick=function(){
+var cost=isAdmin?0:60;
+if(bests[diff]<cost){$('cm').textContent='Не хватает очков в режиме «'+LV[diff].n+'»';return}
+if(!isAdmin){bests[diff]-=cost;save()}
+clean=100;joyTimer=80;lastTick=Date.now();saveCareState();sfxWin();
+$('abar').classList.remove('show');
+careShopScreen();
+};
+$('ntf').onclick=async function(){
+var res=await requestNotifPermission();
+if(res==='granted'){$('cm').style.color='#16a34a';$('cm').textContent='Уведомления включены!'}
+else if(res==='unsupported'){$('cm').textContent='Браузер не поддерживает системные уведомления, но баннер на экране работает.'}
+else{$('cm').textContent='Разрешение на уведомления не выдано.'}
+};
+$('cbk').onclick=function(){ready()};
+}
+
 function ov(h){var o=$('ov');o.innerHTML=h;o.style.display='block';o.scrollTop=0}
 function ok(n){return /^[A-Za-z0-9_]{3,12}$/.test(n)}
 function setRec(d){bests={1:d.b1||0,2:d.b2||d.best||0,3:d.b3||0};gold=d.gold===true;if(d.pass)accPass=d.pass}
@@ -916,6 +1101,7 @@ nickScreen();
 }
 
 function loginPassScreen(n,d){
+dismissSplash();
 state='loginpass';
 ov('<div class="box"><h2>Вход в аккаунт '+n+'</h2><p>Ник уже зарегистрирован. Введи пароль от этого ника, чтобы играть на этом устройстве:</p><input type="password" id="lpi" maxlength="20" placeholder="Пароль"><div class="msg" id="lpm"></div><button id="lpok">Войти</button><button class="sec" id="lpno">Другой ник</button></div>');
 var inp=$('lpi');setTimeout(function(){inp.focus()},50);
@@ -935,6 +1121,7 @@ $('lpno').onclick=function(){nick=null;nickScreen()};
 }
 
 function passSettingsScreen(){
+dismissSplash();
 state='passset';
 ov('<div class="box"><h2>Пароль для входа</h2><p>Задай пароль, чтобы заходить под ником <b>'+nick+'</b> на ПК или другом телефоне:</p><input type="text" id="psi" maxlength="20" autocomplete="off" placeholder="Минимум 4 символа" value="'+(accPass||'')+'"><div class="msg" id="psm"></div><button id="psok">Сохранить пароль</button><button class="sec" id="psbk">Назад</button></div>');
 var inp=$('psi');setTimeout(function(){inp.focus()},50);
@@ -955,10 +1142,10 @@ inp.onkeydown=function(e){if(e.key==='Enter')$('psok').click()};
 $('psbk').onclick=function(){ready()};
 }
 
-function nickScreen(){state='nick';score=0;syncHeliBtn();hud();bg();drawPig();
+function nickScreen(){state='nick';score=0;syncHeliBtn();hud();bg();drawPig();drawSplash();
 ov('<div class="box"><h2>Введи свой ник</h2><p>3–12 символов: латиница, цифры, _</p><input type="text" id="ni" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Например, Piggy_77"><div class="msg" id="em"></div><button id="nb">Играть</button></div>');
 var i=$('ni');if(nick)i.value=nick;
-$('nb').onclick=async function(){initAudio();var n=i.value.trim(),m=$('em');m.textContent='';
+$('nb').onclick=async function(){dismissSplash();initAudio();var n=i.value.trim(),m=$('em');m.textContent='';
 if(!ok(n)){m.textContent='Нужно 3–12 символов: латиница, цифры или _';return}
 if(online){try{var d=await fget('scores/'+n.toLowerCase());if(d){
 if(!hasAccess(d)){
@@ -973,18 +1160,20 @@ var ow=d.owners||{};ow[uid]=true;try{await fput('scores/'+n.toLowerCase()+'/owne
 else{await fput('scores/'+n.toLowerCase(),{nick:n,owner:uid,b1:0,b2:0,b3:0,gold:false,pass:''});setRec({})}}
 catch(e){m.textContent='Не удалось проверить ник, попробуй ещё раз';return}}else{loadLocal(n)}
 nick=n;try{localStorage.setItem('gp_nick',n)}catch(e){}await loadGr();ready()}}
-function ready(){state='ready';score=0;syncHeliBtn();hud();bg();drawPig();
-var h='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность:</p>';
+
+function ready(){state='ready';score=0;syncHeliBtn();tickCare();hud();bg();drawPig();drawSplash();
+var h='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
 [1,2,3].forEach(function(k){h+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
-h+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
+h+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
 if(online)h+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
 h+='</div>';ov(h);$('hn').textContent=nick;
 document.querySelectorAll('.dbtn').forEach(function(b){b.onclick=function(){diff=+b.dataset.d;lbTab=diff;try{localStorage.setItem('gp_diff',diff)}catch(e){}loadLb();ready()}});
-$('go').onclick=start;$('shp').onclick=shop;$('pwd').onclick=passSettingsScreen;
+$('go').onclick=start;$('shp').onclick=shop;$('crd').onclick=careShopScreen;$('pwd').onclick=passSettingsScreen;
 $('out').onclick=function(){if(confirm('Выйти из аккаунта '+nick+'?'))logoutAccount()};
 if(isAdmin)$('adm').onclick=adminPanel;
 if(online)$('mid').onclick=function(){$('idl').textContent=uid}}
-function shop(){state='shop';var m=Math.max(bests[1],bests[2],bests[3]);
+
+function shop(){dismissSplash();state='shop';var m=Math.max(bests[1],bests[2],bests[3]);
 var h='<div class="box"><h2>Магазин свинок</h2><p>Твой лучший рекорд: '+m+'</p>';
 Object.keys(SK).forEach(function(k){var o=owned(k);
 h+='<div class="row"><canvas data-k="'+k+'" width="172" height="124"></canvas><div class="in">'+(SK[k].tag?'<span class="lim">'+SK[k].tag+'</span>':'')+'<b>'+SK[k].n+'</b><small>'+SK[k].d+'</small></div><button class="sbtn" data-k="'+k+'"'+(o?'':' disabled')+'>'+(o?(curSkin()===k?'Выбрана':'Выбрать'):'Закрыта')+'</button></div>'});
@@ -992,16 +1181,44 @@ h+='<button class="sec" id="bk">Назад</button></div>';ov(h);
 document.querySelectorAll('.row canvas').forEach(function(c){c.getContext('2d').drawImage(getSpr(c.dataset.k),0,0)});
 document.querySelectorAll('.sbtn').forEach(function(b){b.onclick=function(){skin=b.dataset.k;try{localStorage.setItem('gp_skin',skin)}catch(e){}bg();drawPig();shop()}});
 $('bk').onclick=function(){ready()}}
-async function adminPanel(){state='admin';
-var h='<div class="box"><h2>Админ-панель</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><div class="chk">';
+
+async function adminPanel(){dismissSplash();state='admin';
+var h='<div class="box"><h2>Админ-панель</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><input type="number" id="apt" placeholder="Очки (например 5000)"><div class="chk">';
 ['grey','tux','gold','royal','malysh','alien'].forEach(function(k){h+='<label><input type="checkbox" data-s="'+k+'">'+SK[k].n+'</label>'});
-h+='<label><input type="checkbox" id="avip">VIP-значок в таблице</label></div><div class="msg" id="am"></div><button class="sec" id="al">Загрузить</button><button id="as">Выдать / сохранить</button><button class="sec" id="arp">Сбросить пароль игрока</button><button class="red" id="ad">Удалить ник из таблицы</button><button class="red" id="ara">Сбросить всем очки</button><button class="sec" id="bk">Назад</button></div>';
+h+='<label><input type="checkbox" id="avip">VIP-значок в таблице</label></div><div class="msg" id="am"></div><button class="sec" id="al">Загрузить</button><button id="as">Выдать / сохранить</button><button class="sec" id="agp">Начислить очки игроку</button><button class="sec" id="arp">Сбросить пароль игрока</button><button class="red" id="ad">Удалить ник из таблицы</button><button class="red" id="ara">Сбросить всем очки</button><button class="sec" id="bk">Назад</button></div>';
 ov(h);
 function key(){var n=$('an').value.trim();if(!ok(n)){$('am').textContent='Введи ник: 3–12 символов, латиница, цифры, _';return null}$('am').textContent='';return n.toLowerCase()}
 $('al').onclick=async function(){var k=key();if(!k)return;try{var d=await fget('grants/'+k)||{};document.querySelectorAll('.chk input[data-s]').forEach(function(c){c.checked=!!(d.skins&&d.skins[c.dataset.s])});$('avip').checked=d.vip===true;$('am').textContent='Загружено'}catch(e){$('am').textContent='Ошибка загрузки'}};
 $('as').onclick=async function(){var k=key();if(!k)return;var o={skins:{},vip:$('avip').checked},any=o.vip;
 document.querySelectorAll('.chk input[data-s]').forEach(function(c){if(c.checked){o.skins[c.dataset.s]=true;any=true}});
 try{await fput('grants/'+k,any?o:null);await loadGr();$('am').textContent='Сохранено'}catch(e){$('am').textContent='Не удалось сохранить: нет прав админа'}};
+$('agp').onclick=async function(){
+var k=key();if(!k)return;
+var addVal=parseInt($('apt').value,10);
+if(isNaN(addVal)||addVal===0){$('am').textContent='Введи число очков (например 5000)';return}
+$('am').textContent='Начисляю очки...';
+try{
+if(online){
+var cur=await fget('scores/'+k)||{nick:$('an').value.trim(),owner:uid,b1:0,b2:0,b3:0,gold:false};
+var f='b'+diff;
+cur[f]=Math.max(0,(cur[f]||0)+addVal);
+await fput('scores/'+k,cur);
+if(nick&&nick.toLowerCase()===k){setRec(cur);hud()}
+loadLb();
+}else{
+var b=getLoc(),rawNick=$('an').value.trim();
+var u=b[rawNick]||{b1:0,b2:0,b3:0,gold:false};
+var f='b'+diff;
+u[f]=Math.max(0,(u[f]||0)+addVal);
+b[rawNick]=u;
+try{localStorage.setItem('gp_board',JSON.stringify(b))}catch(e){}
+if(nick&&nick.toLowerCase()===k){bests[diff]=u[f];hud()}
+loadLb();
+}
+$('am').style.color='#16a34a';
+$('am').textContent='Игроку '+k+' начислено '+addVal+' очк. ('+LV[diff].n+')!';
+}catch(e){$('am').style.color='';$('am').textContent='Ошибка начисления очков'}
+};
 $('arp').onclick=async function(){var k=key();if(!k)return;if(!confirm('Сбросить пароль игроку '+k+'?'))return;try{await fput('scores/'+k+'/pass','');$('am').textContent='Пароль игрока '+k+' сброшен'}catch(e){$('am').textContent='Не удалось сбросить пароль'}};
 $('ad').onclick=async function(){var k=key();if(!k)return;if(!confirm('Удалить ник '+k+' из таблицы? Рекорды пропадут.'))return;try{await fdel('scores/'+k);loadLb();$('am').textContent='Ник удалён'}catch(e){$('am').textContent='Не удалось удалить'}};
 $('ara').onclick=async function(){
@@ -1028,6 +1245,7 @@ $('am').textContent='Очки всем игрокам сброшены!';
 }catch(e){$('am').textContent='Ошибка при сбросе очков'}
 };
 $('bk').onclick=function(){ready()}}
+
 async function auth(){if(tok&&Date.now()<exp-60000)return;var rt=null,j;try{rt=localStorage.getItem('gp_rt')}catch(e){}
 if(rt){var r=await fetch('https://securetoken.googleapis.com/v1/token?key='+CFG.apiKey,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(rt)});j=await r.json();
 if(j.id_token){tok=j.id_token;uid=j.user_id;exp=Date.now()+j.expires_in*1000;try{localStorage.setItem('gp_rt',j.refresh_token)}catch(e){}return}}
@@ -1064,15 +1282,18 @@ l=l.filter(function(x){return x.best>0}).sort(function(a,b){return b.best-a.best
 document.querySelectorAll('#tb button').forEach(function(b){b.className=(+b.dataset.t===lbTab)?'on':''})}
 document.querySelectorAll('#tb button').forEach(function(b){b.onclick=function(){lbTab=+b.dataset.t;loadLb()}});
 document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT')return;if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}else if(e.code==='KeyH'){e.preventDefault();buyHelicopter()}});
-document.addEventListener('pointerdown',function(e){if(state==='play'&&!e.target.closest('button,input'))jump()});
-bg();drawPig();
+document.addEventListener('pointerdown',function(e){
+if(state!=='play'&&!e.target.closest('button,input')){dismissSplash();bg();drawPig();return}
+if(state==='play'&&!e.target.closest('button,input'))jump();
+});
+bg();drawPig();drawSplash();
 (async function(){
 if(CFG.apiKey&&CFG.databaseURL){try{await auth();online=true}catch(e){online=false}}
 if(online){try{isAdmin=(await fget('admins/'+uid))===true}catch(e){}}
 $('ln').textContent=online?'Ник закрепляется за устройством или паролем: можно играть и с телефона, и с ПК.':'Таблица пока локальная (только на этом устройстве). Подключи Firebase по инструкции в README, и она станет общей.';
 loadLb();if(online)setInterval(loadLb,15000);
 if(nick){if(online){try{var d=await fget('scores/'+nick.toLowerCase());if(hasAccess(d))setRec(d);else nick=null}catch(e){}}else loadLocal(nick)}
-await loadGr();syncModesUI();
+await loadGr();syncModesUI();syncHeliBtn();tickCare();
 if(nick&&ok(nick))ready();else{nick=null;nickScreen()}
 })();
 </script>
