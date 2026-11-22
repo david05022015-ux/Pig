@@ -128,7 +128,6 @@ function ov(htmlStr){
 }
 function ok(n){return /^[A-Za-z0-9_]{3,12}$/.test(n)}
 
-/* Уведомления и уход (голод + купание + запах/мухи) */
 function notifyFeedPig(text){
   var msg=text||'Покорми свинку';
   if($('atxt'))$('atxt').textContent=msg;
@@ -182,7 +181,6 @@ function stepCare(){
 }
 setInterval(stepCare,1000);
 
-/* Полноэкранный режим */
 function syncFsUI(){
   var nat=!!(document.fullscreenElement||document.webkitFullscreenElement);
   var on=nat||fullSc;
@@ -211,7 +209,6 @@ if($('fsb')){
 document.addEventListener('fullscreenchange',function(){if(!document.fullscreenElement)fullSc=false;syncFsUI()});
 document.addEventListener('webkitfullscreenchange',function(){if(!document.webkitFullscreenElement)fullSc=false;syncFsUI()});
 
-/* Звук, музыка и треки */
 var AC=null,mStep=0,mTimer=0,track67=null,track67Ok=false,trackGta=null,trackGtaOk=false;
 try{
   track67=new Audio('67.mp3');track67.loop=true;track67.volume=0.65;
@@ -881,7 +878,7 @@ function careShopScreen(){
   state='care';stepCare();
   var hCol=hunger>40?'#22c55e':(hunger>18?'#f59e0b':'#ef4444');
   var clColor=clean>45?'#38bdf8':(clean>20?'#f59e0b':'#84cc16');
-  var statusTxt=clean<20?'Свинка жутко воняет, вокруг роятся мухи!':(clean<45?'Свинка пачкается, пора искупать!':(hunger<25?'Свинка голодная — срочно покорми!':'Свинка в норме');
+  var statusTxt=clean<20?'Свинка жутко воняет, вокруг роятся мухи!':(clean<45?'Свинка пачкается, пора искупать!':(hunger<25?'Свинка голодная — срочно покорми!':'Свинка в норме'));
   var html='<div class="box"><h2>Еда и уход</h2><p>Рекорд ('+LV[diff].n+'): '+bests[diff]+' · '+statusTxt+'</p>';
   html+='<div class="stbar">';
   html+='<div class="strow"><div class="sthead"><span>🍖 Сытость</span><span>'+Math.round(hunger)+'%</span></div><div class="mtr"><div class="mfl" style="width:'+Math.round(hunger)+'%;background:'+hCol+'"></div></div></div>';
