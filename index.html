@@ -40,9 +40,9 @@ canvas{display:block;width:100%;height:auto}
 .mbtn{left:10px}
 .fsbtn{right:10px;font-size:16px}
 .fsbtn.on{border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,.45)}
-.over-slot{display:none;margin-top:12px}
-.over-slot.show{display:block}
-.over-slot .box{margin:0 auto;max-width:100%;text-align:center}
+.menu-slot,.over-slot{display:none;margin-top:12px}
+.menu-slot.show,.over-slot.show{display:block}
+.menu-slot .box,.over-slot .box{margin:0 auto;max-width:100%;text-align:center}
 .modes-box{margin-top:12px}
 .modes-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .mode-chip{margin:0;padding:10px 12px;border-radius:11px;background:var(--bg);color:var(--tx);border:1.5px solid var(--bd);font-size:13px;font-weight:800;letter-spacing:.3px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
@@ -111,6 +111,7 @@ li.me{color:var(--ac);font-weight:600}
 <button type="button" class="fsbtn" id="fsb" title="На весь экран">⛶</button>
 </div>
 <p class="note">Прыжок: пробел, стрелка вверх или касание экрана. Вкусняшки: 🥒 +50, 🥕 +100 и супер-прыжок, 🌿 +200 и щит. Не забывай кормить и мыть свинку!</p>
+<div class="menu-slot" id="menuslot"></div>
 <div class="over-slot" id="overslot"></div>
 <div class="card"><h2>Таблица лидеров</h2>
 <div class="tabs" id="tb"><button data-t="1">Лёгкий</button><button data-t="2">Средний</button><button data-t="3">Гипер</button></div>
@@ -202,6 +203,20 @@ if($('cpnum')){
   };
 }
 
+function hideMenuSlot(){
+  var ms=$('menuslot');
+  if(!ms)return;
+  ms.innerHTML='';
+  ms.classList.remove('show');
+}
+function showMenuSlot(htmlStr){
+  hideOverSlot();
+  closeModalOv();
+  var ms=$('menuslot');
+  if(!ms)return;
+  ms.innerHTML=htmlStr;
+  ms.classList.add('show');
+}
 function hideOverSlot(){
   var sl=$('overslot');
   if(!sl)return;
@@ -209,6 +224,8 @@ function hideOverSlot(){
   sl.classList.remove('show');
 }
 function showOverSlot(htmlStr){
+  hideMenuSlot();
+  closeModalOv();
   var sl=$('overslot');
   if(!sl)return;
   sl.innerHTML=htmlStr;
@@ -216,6 +233,7 @@ function showOverSlot(htmlStr){
 }
 function ov(htmlStr){
   hideOverSlot();
+  hideMenuSlot();
   var o=$('ov');
   if(!o)return;
   o.innerHTML=htmlStr;
@@ -643,7 +661,7 @@ if($('mgb')){
 
 function jump(){if(state==='play'&&!paused&&!air){var sup=hiJump>0;vy=sup?-16.2:-13.2;air=true;sfxJump(sup)}}
 function start(){
-  hideOverSlot();closeModalOv();
+  hideMenuSlot();hideOverSlot();closeModalOv();
   initAudio();L=LV[diff]||LV[2];obs=[];treats=[];pops=[];parts=[];
   spd=L.s0;dist=0;bonus=0;score=0;py=GY;vy=0;air=false;paused=false;
   cd=90;tcd=150;hiJump=0;shield=0;joyTimer=0;scared=false;banner=0;mogFlash=0;
@@ -1287,7 +1305,7 @@ var FOODS=[
   {id:'banquet',n:'🥗 Праздничный микс',p:300,h:100,c:-10}
 ];
 function careShopScreen(){
-  hideOverSlot();
+  hideMenuSlot();hideOverSlot();
   state='care';stepCare();
   var hCol=hunger>40?'#22c55e':(hunger>18?'#f59e0b':'#ef4444');
   var clColor=clean>45?'#38bdf8':(clean>20?'#f59e0b':'#84cc16');
@@ -1417,7 +1435,6 @@ function passSettingsScreen(){
 }
 
 function nickScreen(){
-  hideOverSlot();
   state='nick';score=0;hud();bg();drawPig();
   ov('<div class="box"><h2>Введи свой ник</h2><p>3–12 символов: латиница, цифры, _</p><input type="text" id="ni" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Например, Piggy_77"><div class="msg" id="em"></div><button id="nb">Играть</button></div>');
   var i=$('ni');if(i&&nick)i.value=nick;
@@ -1453,16 +1470,15 @@ function nickScreen(){
 }
 
 function ready(){
-  hideOverSlot();
   state='ready';score=0;stepCare();hud();bg();drawPig();
   var html='<div class="box"><h2>Привет, <span id="hn"></span>!</h2><p>Выбери сложность · Сытость '+Math.round(hunger)+'% · Чистота '+Math.round(clean)+'%</p>';
   [1,2,3].forEach(function(k){html+='<button class="dbtn'+(diff===k?' on':'')+'" data-d="'+k+'"><span>'+LV[k].n+'</span><small>рекорд '+bests[k]+'</small></button>'});
   html+='<p>'+(gold?'Золотая свинка открыта!':'Гипер: набери 1500 очков и получи золотую свинку')+'</p><button id="go">Старт</button><div class="lr"><button class="sec" id="shp">Магазин</button><button class="sec" id="crd">Еда и уход</button><button class="sec" id="pwd">Пароль</button>'+(isAdmin?'<button class="sec" id="adm">Админ</button>':'')+'<button class="sec" id="out">Выйти</button></div>';
   if(online)html+='<button class="lnk" id="mid">Мой ID</button><div class="note" id="idl"></div>';
   html+='</div>';
-  ov(html);
+  showMenuSlot(html);
   if($('hn'))$('hn').textContent=nick||'Игрок';
-  document.querySelectorAll('.dbtn').forEach(function(b){
+  document.querySelectorAll('#menuslot .dbtn').forEach(function(b){
     b.onclick=function(){diff=+b.dataset.d;lbTab=diff;try{localStorage.setItem('gp_diff',diff)}catch(e){}loadLb();ready()}
   });
   if($('go'))$('go').onclick=start;
@@ -1475,7 +1491,7 @@ function ready(){
 }
 
 function shop(){
-  hideOverSlot();
+  hideMenuSlot();hideOverSlot();
   state='shop';var m=Math.max(bests[1],bests[2],bests[3]);
   var html='<div class="box"><h2>Магазин свинок</h2><p>Твой лучший рекорд: '+m+'</p>';
   Object.keys(SK).forEach(function(k){
@@ -1492,7 +1508,7 @@ function shop(){
 }
 
 async function adminPanel(){
-  hideOverSlot();
+  hideMenuSlot();hideOverSlot();
   state='admin';
   var html='<div class="box"><h2>Админ-панель</h2><p>Ник игрока:</p><input type="text" id="an" maxlength="12" autocomplete="off" autocapitalize="off" placeholder="Ник"><input type="number" id="apt" placeholder="Очки (например 5000)"><div class="chk">';
   ['grey','tux','gold','royal','malysh','alien'].forEach(function(k){html+='<label><input type="checkbox" data-s="'+k+'">'+SK[k].n+'</label>'});
